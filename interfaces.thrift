@@ -1,7 +1,3 @@
-service HelloSvc {
-    string hello_func(1: string fname, 2: string lname)
-}
-
 struct NNLayer{
     1:binary arr_bytes;
     2:string data_type;
@@ -29,5 +25,5 @@ service NeuralInterface{
 }
 
 service ImageLoader{
-    NNLayer getImage()
+    Image get_image()
 }

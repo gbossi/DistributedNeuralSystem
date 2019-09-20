@@ -38,6 +38,6 @@ if __name__ == '__main__':
     service = NeuralInterfaceService()
     print("Starting python server...")
     processor = NeuralInterface.Processor(service)
-    server = Server(processor, service, port=30300)
+    server = Server(processor, port=30300)
     server.serve()
     print("done!")
