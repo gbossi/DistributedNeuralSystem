@@ -13,6 +13,13 @@ struct ModelConfiguration{
     2:i16 split_layer;
 }
 
+struct Image{
+    1:binary arr_bytes;
+    2:string data_type;
+    3:list<i16> shape;
+    4:bool last;
+}
+
 service NeuralInterface{
     bool exist_model()
     void set_model(1:ModelConfiguration config)

@@ -2,7 +2,7 @@ from hospital.surgeon import Surgeon
 from hospital.model_factory import ModelFactory
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
-from interfaces import NeuralInterface, ttypes
+from interfaces import NeuralInterface, ImageLoader, ttypes
 import logging
 
 
@@ -36,13 +36,13 @@ class MobileEdge:
         self.transportCS.close()
 
     def apply_configuration(self, model_name: str, split_layer: int):
-        if not self.server_interface.exist_model():
+        if not self.server_interfaceCS.exist_model():
             logging.warning("Apply mobile edge configuration to the server")
-            self.server_interface.set_model(ttypes.ModelConfiguration(model_name, split_layer))
+            self.server_interfaceCS.set_model(ttypes.ModelConfiguration(model_name, split_layer))
             client_model, _ = Surgeon().split(ModelFactory().get_new_model(model_name), split_layer)
         else:
             logging.warning("Apply server configuration to the mobile edge")
-            current_config = self.server_interface.get_configuration()
+            current_config = self.server_interfaceCS.get_configuration()
             client_model, _ = Surgeon().split(ModelFactory().get_new_model(current_config.model_name),
                                               current_config.split_layer)
 

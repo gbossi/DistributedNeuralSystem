@@ -1,11 +1,8 @@
 from hospital.surgeon import Surgeon
 from hospital.model_factory import ModelFactory
-from thrift.transport import TSocket
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
-from thrift.server import TServer
 from interfaces import NeuralInterface
 from interfaces import ttypes
+from thrift_servers import Server
 import numpy as np
 
 
@@ -37,25 +34,10 @@ class NeuralInterfaceService:
 #    NNLayer make_prediction(1: NNLayer data)
 
 
-class Server:
-    def __init__(self, service, port=9090):
-        self.processor = NeuralInterface.Processor(service)
-        self.transport = TSocket.TServerSocket(port=port)
-        self.tfactory = TTransport.TBufferedTransportFactory()
-        self.pfactory = TBinaryProtocol.TBinaryProtocolFactory()
-        # This is single thread server
-        # TODO something better Threaded Server !!!
-        # even better maybe to let somebody decide which kind of server depending on the
-        # service
-        self.server = TServer.TSimpleServer(self.processor, self.transport, self.tfactory, self.pfactory)
-
-    def serve(self):
-        self.server.serve()
-
-
 if __name__ == '__main__':
     service = NeuralInterfaceService()
     print("Starting python server...")
-    server = Server(service, port=30300)
+    processor = NeuralInterface.Processor(service)
+    server = Server(processor, service, port=30300)
     server.serve()
     print("done!")
