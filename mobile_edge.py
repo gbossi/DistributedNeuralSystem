@@ -1,14 +1,18 @@
-from hospital.surgeon import Surgeon
-from hospital.model_factory import ModelFactory
-from thrift.transport import TSocket, TTransport
-from thrift.protocol import TBinaryProtocol
-from interfaces import NeuralInterface, ImageLoader, ttypes
-import logging, cv2
+import cv2
+import logging
+
 import numpy as np
+from thrift.protocol import TBinaryProtocol
+from thrift.transport import TSocket, TTransport
+
+from hospital.model_factory import ModelFactory
+from hospital.surgeon import Surgeon
+from interfaces import NeuralInterface, ImageLoader, ttypes
 
 
 class MobileEdge:
     def __init__(self, ip_addressCS="localhost", portCS=30300, ip_addressIL="localhost", portIL=40400):
+        self.client_model = None
         self.init_computation_server(ip_addressCS, portCS)
         self.init_image_loader(ip_addressIL, portIL)
 
@@ -47,33 +51,42 @@ class MobileEdge:
             self.client_model, _ = Surgeon().split(ModelFactory().get_new_model(current_config.model_name),
                                               current_config.split_layer)
 
-    def input_generator(self, batch_dim=2, maximum=10):
-        no_batch = 0
+    def input_generator(self, batch_dim=2):
+        input_dimension = self.client_model.layers[1].input_shape[1:]
+        batch_features = np.zeros([batch_dim]+list(input_dimension))
 
-        while no_batch < maximum:
-            no_batch += 1
-            image_tuple = self.server_interfaceIL.get_image()
-
-            input_dimension = tuple(self.client_model.layers[1].input_shape[1:])
-            batch_features = np.zeros([batch_dim]+list(input_dimension))
-            image_data = self.adapt_image_to_input_dimension(image_tuple, input_dimension)
-
+        while True:
             for i in range(batch_dim):
-                batch_features[i] = image_data
                 image_tuple = self.server_interfaceIL.get_image()
-                image_data = self.adapt_image_to_input_dimension(image_tuple, input_dimension)
-            yield batch_features
+                image_data = self.adapt_image_to_model_dimension(image_tuple)
+                batch_features[i] = image_data
+                if image_tuple.last:
+                    break
+            else:
+                yield batch_features
+                continue
+            break
 
-    def adapt_image_to_input_dimension(self, image_tuple, input_dimension):
+    def adapt_image_to_model_dimension(self, image_tuple):
+        model_dimension = tuple(self.client_model.layers[1].input_shape[1:3])
         image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
             image_tuple.shape)
-        x_dim, y_dim, _ = input_dimension
-        image_data = cv2.resize(image_data, (x_dim, y_dim), interpolation=cv2.INTER_AREA)
+        image_data = cv2.resize(image_data, model_dimension, interpolation=cv2.INTER_AREA)
         return image_data
 
     def start_combined_prediction(self, n):
-        prediction = self.client_model.predict_generator(self.input_generator(), steps=10)
+        # Batch should be the maximum amount of data that could fit inside the memory
+        # Steps means how many times
+        prediction = self.client_model.predict_generator(self.input_generator(batch_dim=1), steps=1)
+        print("prediction done")
+        print(prediction.shape)
+        self.send_prediction(prediction)
         return prediction
+
+    def send_prediction(self, prediction):
+        print("Number of MB " + str(prediction.nbytes/1000000))
+        print(self.client_model.summary())
+        return
 
 
 if __name__ == '__main__':
@@ -81,10 +94,10 @@ if __name__ == '__main__':
     # and pass the config file to the function as arg
 
     model_name = "VGG19"
-    split_layer = 5
+    split_layer = -1
 
     client = MobileEdge()
     client.connect_to_computational_server()
     client.apply_configuration(model_name, split_layer)
     client.connect_to_image_loader()
-    print(client.start_combined_prediction(1))
+    client.start_combined_prediction(3)

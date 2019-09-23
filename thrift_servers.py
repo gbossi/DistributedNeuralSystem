@@ -1,19 +1,32 @@
 from thrift.transport import TSocket
 from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
-from thrift.server import TServer
+from thrift.server import TServer, TNonblockingServer
+from enum import Enum
+
+class ServerType(Enum):
+    SIMPLE = "simple"
+    THREADED = "threaded"
+    POOL_THREADED = "poolThreaded"
+    NON_BLOCKING = "nonBlocking"
 
 
 class Server:
-    def __init__(self, processor, port=9090):
+    def __init__(self, server_type, processor, port=9090, no_threads=4):
+        if not isinstance(server_type, ServerType):
+            raise TypeError("Server type must be instance of ServerType")
+
         self.transport = TSocket.TServerSocket(port=port)
         self.tfactory = TTransport.TBufferedTransportFactory()
         self.pfactory = TBinaryProtocol.TBinaryProtocolFactory()
-        # This is single thread server
-        # TODO something better Threaded Server !!!
-        # even better maybe to let somebody decide which kind of server depending on the
-        # service
-        self.server = TServer.TSimpleServer(processor, self.transport, self.tfactory, self.pfactory)
+
+        self.server = {
+            "simple": TServer.TSimpleServer(processor, self.transport, self.tfactory, self.pfactory),
+            "threaded": TServer.TThreadedServer(processor, self.transport, self.tfactory, self.pfactory),
+            "poolThreaded": TServer.TThreadPoolServer(processor, self.transport, self.tfactory, self.pfactory),
+            "nonBlocking": TNonblockingServer.TNonblockingServer(processor, self.transport, self.tfactory, self.pfactory)
+        }[server_type.value]
 
     def serve(self):
         self.server.serve()
+

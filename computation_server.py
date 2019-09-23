@@ -2,7 +2,7 @@ from hospital.surgeon import Surgeon
 from hospital.model_factory import ModelFactory
 from interfaces import NeuralInterface
 from interfaces import ttypes
-from thrift_servers import Server
+from thrift_servers import Server, ServerType
 import numpy as np
 
 
@@ -27,7 +27,7 @@ class NeuralInterfaceService:
                                          self.model_configuration.split_layer)
 
     def uninstantiate_model(self):
-        del self.config
+        del self.model_configuration
         del self.model
 
 #TODO
@@ -38,6 +38,6 @@ if __name__ == '__main__':
     service = NeuralInterfaceService()
     print("Starting python server...")
     processor = NeuralInterface.Processor(service)
-    server = Server(processor, port=30300)
+    server = Server(ServerType.SIMPLE, processor, port=30300)
     server.serve()
     print("done!")
