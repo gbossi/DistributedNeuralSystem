@@ -3,7 +3,7 @@ from hospital.model_factory import ModelFactory
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from interfaces import NeuralInterface, ImageLoader, ttypes
-import logging
+import logging, cv2
 import numpy as np
 
 
@@ -47,29 +47,32 @@ class MobileEdge:
             self.client_model, _ = Surgeon().split(ModelFactory().get_new_model(current_config.model_name),
                                               current_config.split_layer)
 
-    def input_generator(self, batch_dim=1, maximum=10):
+    def input_generator(self, batch_dim=2, maximum=10):
         no_batch = 0
-        image_tuple = self.server_interfaceIL.get_image()
-        image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
-            image_tuple.shape)
 
-        while no_batch < maximum and not image_tuple.last:
-            image_tuple.shape.insert(0, batch_dim)
-            print(image_tuple.shape)
-            batch_features = np.zeros(image_tuple.shape)
-            print(batch_features.shape)
+        while no_batch < maximum:
+            no_batch += 1
+            image_tuple = self.server_interfaceIL.get_image()
+
+            input_dimension = tuple(self.client_model.layers[1].input_shape[1:])
+            batch_features = np.zeros([batch_dim]+list(input_dimension))
+            image_data = self.adapt_image_to_input_dimension(image_tuple, input_dimension)
+
             for i in range(batch_dim):
                 batch_features[i] = image_data
-                if image_tuple.last:
-                    break
                 image_tuple = self.server_interfaceIL.get_image()
-                image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
-                    image_tuple.shape)
-        yield batch_features
+                image_data = self.adapt_image_to_input_dimension(image_tuple, input_dimension)
+            yield batch_features
 
+    def adapt_image_to_input_dimension(self, image_tuple, input_dimension):
+        image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
+            image_tuple.shape)
+        x_dim, y_dim, _ = input_dimension
+        image_data = cv2.resize(image_data, (x_dim, y_dim), interpolation=cv2.INTER_AREA)
+        return image_data
 
     def start_combined_prediction(self, n):
-        prediction = self.client_model.predict_generator(self.input_generator(), steps=n)
+        prediction = self.client_model.predict_generator(self.input_generator(), steps=10)
         return prediction
 
 
