@@ -4,7 +4,6 @@ import queue
 import numpy as np
 
 
-# BUTTACI DENTRO ID DELLE FOTO
 class SinkInterfaceService:
     def __init__(self):
         self.queue = queue.Queue()
@@ -19,14 +18,10 @@ class SinkInterfaceService:
     def put_partial_result(self, image_tuple):
         image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
             image_tuple.shape)
-
-        if len(image_data.shape == 4):
-            self.check_shape(image_tuple.shape[1:3])
-            for single_image in image_data:
-                self.queue.put(single_image)
-        elif len(image_data.shape == 3):
-            self.check_shape(image_tuple.shape)
-            self.queue.put(image_data)
+        image_id = image_tuple.id
+        self.check_shape(image_tuple.shape[1:3])
+        for i in range(len(image_data)):
+            self.queue.put((image_id[i], image_data[i]))
 
     def check_shape(self, image_shape):
         if not self.data_shape:
@@ -35,11 +30,15 @@ class SinkInterfaceService:
             raise AttributeError("Input Error, Unhandled Batch Dimension")
 
     def get_partial_result(self, batch_dim):
+        id_list = []
         batch_features = np.zeros([batch_dim]+list(self.data_shape))
         for i in range(batch_dim):
-            batch_features[i] = self.queue.get()
+            element = self.queue.get()
+            id_list.append(element[0])
+            batch_features[i] = element[1]
+        last = False
 
-        return ttypes.Image()
+        return ttypes.Image(id_list, batch_features.tobytes(), batch_features.dtype.name, batch_features.shape, last)
 
 
 if __name__ == '__main__':
