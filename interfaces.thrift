@@ -10,10 +10,11 @@ struct ModelConfiguration{
 }
 
 struct Image{
-    1:binary arr_bytes;
-    2:string data_type;
-    3:list<i16> shape;
-    4:bool last;
+    1:list<string> id;
+    2:binary arr_bytes;
+    3:string data_type;
+    4:list<i16> shape;
+    5:bool last;
 }
 
 service NeuralInterface{
@@ -27,3 +28,10 @@ service NeuralInterface{
 service ImageLoader{
     Image get_image()
 }
+
+service SinkInterface{
+    void put_partial_result(1:Image result)
+    Image get_partial_result(1:i16 batch_dimension)
+}
+
+

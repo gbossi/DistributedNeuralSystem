@@ -1,5 +1,4 @@
-from interfaces import ImageLoader
-from interfaces import ttypes
+from interfaces import ImageLoader, ttypes
 from thrift_servers import Server, ServerType
 import numpy as np
 import os, random, queue
@@ -21,7 +20,7 @@ class ImageLoaderService:
             last = True
         else:
             last = False
-        return ttypes.Image(img_data.tobytes(), img_data_type, img_shape, last)
+        return ttypes.Image(list(os.path.basename(path)), img_data.tobytes(), img_data_type, img_shape, last)
 
     @staticmethod
     def build_iterator(img_directory):
