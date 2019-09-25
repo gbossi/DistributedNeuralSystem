@@ -19,9 +19,15 @@ class SinkInterfaceService:
         image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
             image_tuple.shape)
         image_id = image_tuple.id
+        print(image_data.shape)
         self.check_shape(image_tuple.shape[1:3])
         for i in range(len(image_data)):
             self.queue.put((image_id[i], image_data[i]))
+        self.correct_way()
+
+    def correct_way(self):
+        print(self.queue.qsize())
+
 
     def check_shape(self, image_shape):
         if not self.data_shape:

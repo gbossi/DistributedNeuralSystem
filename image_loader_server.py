@@ -1,4 +1,4 @@
-from interfaces import ImageLoader, ttypes
+from interfaces import ImageLoaderInterface, ttypes
 from thrift_servers import Server, ServerType
 import numpy as np
 import os, random, queue
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     image_path = "./images/"
     service = ImageLoaderService(image_path)
     print("Starting python server...")
-    processor = ImageLoader.Processor(service)
+    processor = ImageLoaderInterface.Processor(service)
     server = Server(ServerType.THREADED, processor, port=40400)
     server.serve()
     print("done!")

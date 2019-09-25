@@ -8,17 +8,31 @@ from thrift.transport import TSocket, TTransport
 
 from hospital.model_factory import ModelFactory
 from hospital.surgeon import Surgeon
-from interfaces import NeuralInterface, ImageLoader, ttypes
+from interfaces import NeuralInterface, ImageLoaderInterface, SinkInterface, ttypes
 from functools import reduce
 
+class SinkConnection:
+    def __init__(self, ip_address="localhost", port=50500):
+        self.transportS = TSocket.TSocket(ip_address, port)
+        self.transportS = TTransport.TBufferedTransport(self.transportS)
+        self.protocolS = TBinaryProtocol.TBinaryProtocol(self.transportS)
+        self.server_interfaceS = SinkInterface.Client(self.protocolS)
+        self._id_list = []
+
+    def connect_to_sink_service(self):
+        self.transportS.open()
+
+    def send_prediction(self, image_ids, prediction):
+        data = ttypes.Image(image_ids, prediction.tobytes(), prediction.dtype.name, prediction.shape, False)
+        self.server_interfaceS.put_partial_result(data)
 
 class InputGenerator:
     def __init__(self, ip_address="localhost", port=40400):
         self.transportIL = TSocket.TSocket(ip_address, port)
         self.transportIL = TTransport.TBufferedTransport(self.transportIL)
         self.protocolIL = TBinaryProtocol.TBinaryProtocol(self.transportIL)
-        self.server_interfaceIL = ImageLoader.Client(self.protocolIL)
-        self.id_list = []
+        self.server_interfaceIL = ImageLoaderInterface.Client(self.protocolIL)
+        self._id_list = []
 
     def connect_to_image_loader(self):
         self.transportIL.open()
@@ -28,14 +42,13 @@ class InputGenerator:
 
     def run(self, batch_dim, input_dimension):
         batch_features = np.zeros([batch_dim]+list(input_dimension))
-        print(batch_features.shape)
 
         while True:
             for i in range(batch_dim):
                 image_tuple = self.server_interfaceIL.get_image()
                 image_data = self.adapt_image_to_model_dimension(image_tuple, input_dimension)
                 batch_features[i] = image_data
-                self.id_list.append(reduce(operator.add, image_tuple.id))
+                self._id_list.append(reduce(operator.add, image_tuple.id))
                 if image_tuple.last:
                     break
             else:
@@ -43,10 +56,10 @@ class InputGenerator:
                 continue
             break
 
-    def get_idlist(self):
-        temp_list = self.id_list
-        del self.id_list
-        self.id_list = []
+    def get_id_list(self):
+        temp_list = self._id_list
+        del self._id_list
+        self._id_list = []
         return temp_list
 
     @staticmethod
@@ -88,13 +101,7 @@ class MobileEdge:
         model_dimension = self.client_model.layers[1].input_shape[1:]
         prediction = self.client_model.predict_generator(generator.run(batch_dim=1, input_dimension=model_dimension),
                                                          steps=1)
-        self.send_prediction(generator.get_idlist())
-        return prediction
-
-    def send_prediction(self, prediction):
-        print("Number of MB "+str(prediction.nbytes / 1000000))
-        print(self.client_model.summary())
-        return
+        return generator.get_id_list(), prediction
 
 
 if __name__ == '__main__':
@@ -107,7 +114,13 @@ if __name__ == '__main__':
     image_gen = InputGenerator()
     image_gen.connect_to_image_loader()
 
+    sink_service = SinkConnection()
+    sink_service.connect_to_sink_service()
+
     client = MobileEdge()
     client.connect_to_computational_server()
     client.apply_configuration(model_name, split_layer)
-    client.start_combined_prediction(image_gen)
+    image_ids, predictions = client.start_combined_prediction(image_gen)
+    sink_service.send_prediction(image_ids, predictions)
+
+

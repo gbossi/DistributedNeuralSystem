@@ -4,6 +4,10 @@ struct NNLayer{
     3:list<i16> shape;
 }
 
+/**
+*  COMMENT SECTION
+**/
+
 struct ModelConfiguration{
     1:string model_name;
     2:i16 split_layer;
@@ -25,7 +29,7 @@ service NeuralInterface{
     NNLayer make_prediction(1:NNLayer data)
 }
 
-service ImageLoader{
+service ImageLoaderInterface{
     Image get_image()
 }
 
