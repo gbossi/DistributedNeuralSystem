@@ -1,4 +1,4 @@
-from thrift_servers import ServerType, Server
+from utils.thrift_servers import ServerType, Server
 from interfaces import SinkInterface, ttypes
 import queue
 import numpy as np
@@ -16,8 +16,7 @@ class SinkInterfaceService:
         return self.queue.full()
 
     def put_partial_result(self, image_tuple):
-        image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
-            image_tuple.shape)
+        image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(image_tuple.shape)
         image_id = image_tuple.id
         print(image_data.shape)
         self.check_shape(image_tuple.shape[1:3])
@@ -51,6 +50,6 @@ if __name__ == '__main__':
     service = SinkInterfaceService()
     print("Starting python server...")
     processor = SinkInterface.Processor(service)
-    server = Server(ServerType.SIMPLE, processor, port=50500)
+    server = Server(ServerType.THREADED, processor, port=60600)
     server.serve()
     print("done!")

@@ -1,5 +1,5 @@
 from interfaces import ImageLoaderInterface, ttypes
-from thrift_servers import Server, ServerType
+from utils.thrift_servers import Server, ServerType
 import numpy as np
 import os, random, queue
 from PIL import Image
@@ -16,16 +16,15 @@ class ImageLoaderService:
         img_data = np.array(img_file)
         img_data_type = img_data.dtype.name
         img_shape = img_data.shape
-        if self.image_iterator.empty():
-            last = True
-        else:
-            last = False
+        last = False
+        print(self.image_iterator.qsize())
         return ttypes.Image(list(os.path.basename(path)), img_data.tobytes(), img_data_type, img_shape, last)
 
     @staticmethod
     def build_iterator(img_directory):
         image_queue = queue.Queue()
         file_names = [item for item in os.listdir(img_directory)]
+        print(len(file_names))
         file_paths = []
         for file_name in file_names:
             file_paths = file_paths+[os.path.join(img_directory, file_name)]

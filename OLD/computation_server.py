@@ -1,9 +1,8 @@
-from hospital.surgeon import Surgeon
-from hospital.model_factory import ModelFactory
+from utils.surgeon import Surgeon
+from utils.model_factory import ModelFactory
 from interfaces import NeuralInterface
 from interfaces import ttypes
-from thrift_servers import Server, ServerType
-import numpy as np
+from utils.thrift_servers import Server, ServerType
 
 
 class NeuralInterfaceService:

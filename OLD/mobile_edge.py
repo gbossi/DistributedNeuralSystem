@@ -6,13 +6,13 @@ import numpy as np
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
 
-from hospital.model_factory import ModelFactory
-from hospital.surgeon import Surgeon
+from utils.model_factory import ModelFactory
+from utils.surgeon import Surgeon
 from interfaces import NeuralInterface, ImageLoaderInterface, SinkInterface, ttypes
 from functools import reduce
 
 class SinkConnection:
-    def __init__(self, ip_address="localhost", port=50500):
+    def __init__(self, ip_address="localhost", port=60600):
         self.transportS = TSocket.TSocket(ip_address, port)
         self.transportS = TTransport.TBufferedTransport(self.transportS)
         self.protocolS = TBinaryProtocol.TBinaryProtocol(self.transportS)
@@ -100,13 +100,11 @@ class MobileEdge:
         # Steps means how many times
         model_dimension = self.client_model.layers[1].input_shape[1:]
         prediction = self.client_model.predict_generator(generator.run(batch_dim=1, input_dimension=model_dimension),
-                                                         steps=1)
+                                                         steps=10)
         return generator.get_id_list(), prediction
 
 
 if __name__ == '__main__':
-    # Maybe its better to get the argument from a config file
-    # and pass the config file to the function as arg
 
     model_name = "VGG19"
     split_layer = -1

@@ -1,17 +1,41 @@
-struct NNLayer{
-    1:binary arr_bytes;
-    2:string data_type;
-    3:list<i16> shape;
-}
-
 /**
 *  COMMENT SECTION
 **/
+
+enum ServerType{
+    CLIENT
+    LOGGER
+    SINK
+}
+
+enum ClientState{
+    WAITING
+    RUNNING
+    RESET
+}
+
+enum ModelState{
+    UNSET
+    AVAILABLE
+    DIRT
+}
+
+struct ServerConfiguration{
+    1:ServerType type;
+    2:string ip;
+    3:i32 port;
+}
 
 struct ModelConfiguration{
     1:string model_name;
     2:i16 split_layer;
 }
+
+struct Configuration{
+    1:ModelConfiguration client_config
+    2:list<ServerConfiguration> remote_server_configuration
+}
+
 
 struct Image{
     1:list<string> id;
@@ -21,21 +45,29 @@ struct Image{
     5:bool last;
 }
 
-service NeuralInterface{
-    bool exist_model()
-    void set_model(1:ModelConfiguration config)
-    ModelConfiguration get_configuration()
-    void uninstantiate_model()
-    NNLayer make_prediction(1:NNLayer data)
+struct FileChunk {
+  1: binary data;
+  2: i64 remaining;
 }
 
-service ImageLoaderInterface{
-    Image get_image()
-}
 
 service SinkInterface{
     void put_partial_result(1:Image result)
     Image get_partial_result(1:i16 batch_dimension)
 }
 
+
+service ControllerInterface{
+    Configuration get_new_configuration()
+    ClientState get_state()
+    FileChunk get_model_chunk(1:ServerType server_type, 2:i64 offset, 3:i32 size);
+    void register_server(1:ServerConfiguration server_configuration)
+}
+
+/*    Configuration get_new_configuration(1:LocalSettings settings) */
+
+
+service LoggerInterface{
+    void log_message(1:string log_message)
+}
 
