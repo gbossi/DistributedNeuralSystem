@@ -2,16 +2,20 @@
 *  COMMENT SECTION
 **/
 
-enum ServerType{
+enum ElementType{
+    CONTROLLER
+    CLOUD
     CLIENT
     LOGGER
     SINK
 }
 
-enum ClientState{
+enum ElementState{
     WAITING
+    READY
     RUNNING
     RESET
+    STOP
 }
 
 enum ModelState{
@@ -20,10 +24,10 @@ enum ModelState{
     DIRT
 }
 
-struct ServerConfiguration{
-    1:ServerType type;
-    2:string ip;
-    3:i32 port;
+struct ElementConfiguration{
+    1:ElementType type;
+    2:optional string ip;
+    3:optional i32 port;
 }
 
 struct ModelConfiguration{
@@ -32,8 +36,8 @@ struct ModelConfiguration{
 }
 
 struct Configuration{
-    1:ModelConfiguration client_config
-    2:list<ServerConfiguration> remote_server_configuration
+    1:ModelConfiguration model_config
+    2:list<ElementConfiguration> elements_configuration
 }
 
 
@@ -50,6 +54,11 @@ struct FileChunk {
   2: i64 remaining;
 }
 
+struct Message {
+    1:string id;
+    2:ElementType server_type;
+    3:string message;
+}
 
 service SinkInterface{
     void put_partial_result(1:Image result)
@@ -59,15 +68,15 @@ service SinkInterface{
 
 service ControllerInterface{
     Configuration get_new_configuration()
-    ClientState get_state()
-    FileChunk get_model_chunk(1:ServerType server_type, 2:i64 offset, 3:i32 size);
-    void register_server(1:ServerConfiguration server_configuration)
+    ElementState get_state(1:string element_id)
+    FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size);
+    string register_element(1:ElementConfiguration element_configuration)
 }
 
 /*    Configuration get_new_configuration(1:LocalSettings settings) */
 
 
-service LoggerInterface{
-    void log_message(1:string log_message)
+service LogInterface{
+    void log_message(1:Message log_message)
 }
 
