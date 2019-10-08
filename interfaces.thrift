@@ -36,8 +36,7 @@ struct ModelConfiguration{
 }
 
 struct Configuration{
-    1:ModelConfiguration model_config
-    2:list<ElementConfiguration> elements_configuration
+    1:list<ElementConfiguration> elements_configuration
 }
 
 
