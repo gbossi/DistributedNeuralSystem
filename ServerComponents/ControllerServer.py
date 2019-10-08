@@ -21,15 +21,15 @@ class ElementTable:
 
 
     def trigger_state(self):
-        if self.exist_not_running_type(ElementType.CONTROLLER):
+        if self.exist_waiting_type(ElementType.CONTROLLER):
             self.update_state_by_type(ElementType.CONTROLLER, ElementState.RUNNING)
-        if self.exist_not_running_type(ElementType.LOGGER):
+        if self.exist_waiting_type(ElementType.LOGGER):
             self.update_state_by_type(ElementType.LOGGER, ElementState.RUNNING)
-            if self.exist_not_running_type(ElementType.SINK):
+            if self.exist_waiting_type(ElementType.SINK):
                 self.update_state_by_type(ElementType.SINK, ElementState.RUNNING)
-                if self.exist_not_running_type(ElementType.CLOUD):
+                if self.exist_waiting_type(ElementType.CLOUD):
                     self.update_state_by_type(ElementType.CLOUD, ElementState.RUNNING)
-                    if self.exist_not_running_type(ElementType.CLIENT):
+                    if self.exist_waiting_type(ElementType.CLIENT):
                         self.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
 
     def get_server_configuration(self):
@@ -41,7 +41,7 @@ class ElementTable:
     def get_element_state(self, id):
         return self.element_dict.get(id)['state']
 
-    def exist_not_running_type(self, type: ElementType):
+    def exist_waiting_type(self, type: ElementType):
         if len([x for x in self.element_dict.values() if x['type'] == type and x['state'] is ElementState.RUNNING]) != 0:
             return True
         else:
@@ -128,4 +128,4 @@ if __name__ == '__main__':
     print("Starting python server...")
     processor = ControllerInterface.Processor(service)
     server = Server(ServerType.THREADED, processor, port=10100)
-
+    server.serve()

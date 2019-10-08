@@ -62,10 +62,3 @@ class ControllerClient:
 
         return tf.keras.models.load_model("./client.h5")
 
-
-if __name__ == '__main__':
-    client = ControllerClient()
-    client.connect_to_configuration_server()
-    model = client.download_model()
-    model.summary()
-
