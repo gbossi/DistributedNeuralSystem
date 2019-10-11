@@ -1,7 +1,7 @@
 /**
 *  COMMENT SECTION
 **/
-
+/* */
 enum ElementType{
     CONTROLLER
     CLOUD
@@ -68,6 +68,7 @@ service SinkInterface{
 service ControllerInterface{
     Configuration get_new_configuration()
     ElementState get_state(1:string element_id)
+    ElementState set_state(1:string element_id, 2:ElementState new_state)
     FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size);
     string register_element(1:ElementConfiguration element_configuration)
 }

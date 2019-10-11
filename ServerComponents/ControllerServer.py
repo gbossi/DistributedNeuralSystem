@@ -1,8 +1,6 @@
 from utils.model_factory import ModelFactory
 from utils.surgeon import Surgeon
-from utils.thrift_servers import Server, ServerType
-from interfaces import ControllerInterface
-from interfaces.ttypes import  Configuration, ElementConfiguration, ElementType, ElementState, FileChunk
+from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk
 from interfaces.ttypes import ModelState, ModelConfiguration
 import os, uuid
 
@@ -14,56 +12,56 @@ class ElementTable:
     def insert(self, element_id, element_type, element_ip='unavailable', element_port=0,
                element_state=ElementState.WAITING):
         self.element_dict.update({element_id:
-                                      {"type": element_type, "ip": element_ip, "port": element_port,
-                                       "state": element_state}})
-        if self.get_element_state(element_id is not ElementState.RUNNING):
-            self.trigger_state()
-
+                                      {'type': element_type, 'ip': element_ip, 'port': element_port,
+                                       'state': element_state}})
 
     def trigger_state(self):
-        if self.exist_waiting_type(ElementType.CONTROLLER):
-            self.update_state_by_type(ElementType.CONTROLLER, ElementState.RUNNING)
-        if self.exist_waiting_type(ElementType.LOGGER):
-            self.update_state_by_type(ElementType.LOGGER, ElementState.RUNNING)
-            if self.exist_waiting_type(ElementType.SINK):
-                self.update_state_by_type(ElementType.SINK, ElementState.RUNNING)
-                if self.exist_waiting_type(ElementType.CLOUD):
-                    self.update_state_by_type(ElementType.CLOUD, ElementState.RUNNING)
-                    if self.exist_waiting_type(ElementType.CLIENT):
-                        self.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+        if self.exist_waiting_type(ElementType.SINK):
+            self.update_state_by_type(ElementType.SINK, ElementState.RUNNING)
+            if self.exist_waiting_type(ElementType.CLOUD):
+                self.update_state_by_type(ElementType.CLOUD, ElementState.RUNNING)
+                if self.exist_waiting_type(ElementType.CLIENT):
+                    self.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
 
     def get_server_configuration(self):
+        print(self.element_dict.values())
         server_configurations = []
-        for element in [x for x in self.element_dict.values() if x['type'] != ElementType.CLIENT]:
-            server_configurations.append(ElementConfiguration(element['type'], element['ip'], element['port']))
+        for element in self.element_dict.values():
+            print(element)
+            if element and element['type'] != ElementType.CLIENT:
+                server_configurations += [ElementConfiguration(element['type'], element['ip'], element['port'])]
+        print(server_configurations)
         return server_configurations
 
-    def get_element_state(self, id):
-        return self.element_dict.get(id)['state']
+    def get_element_state(self, element_id):
+        return self.element_dict.get(element_id)['state']
 
-    def exist_waiting_type(self, type: ElementType):
-        if len([x for x in self.element_dict.values() if x['type'] == type and x['state'] is ElementState.RUNNING]) != 0:
+    def set_element_state(self, element_id, state):
+        old_element = self.element_dict.get(element_id)
+        new_element = old_element.update({'state': state})
+        self.element_dict.update({'element_id': new_element})
+        return self.get_element_state(element_id)
+
+    def exist_waiting_type(self, element_type: ElementType):
+        if len([x for x in self.element_dict.values() if x['type'] is element_type and x['state'] is ElementState.RUNNING]) != 0:
             return True
         else:
             return False
 
-    def update_state_by_type(self, type: ElementType, state: ElementState):
+    def update_state_by_type(self, element_type: ElementType, state: ElementState):
         for element in self.element_dict.items():
-            if element[1]['type'] is type:
+            if element[1]['type'] is element_type:
                 self.element_dict[element[0]]['state'] = state
 
 
 class ControllerInterfaceService:
     def __init__(self):
-        # The following two lines should be done by the register element function
-        log_server = ElementConfiguration(ip="localhost", port=20200, type=ElementType.LOGGER)
-        sink_server = ElementConfiguration(ip="localhost", port=30300, type=ElementType.SINK)
-        self.device_model_path = "../models/client/"
-        self.server_model_path = "../models/server/"
+        self.device_model_path = "./models/client/"
+        self.server_model_path = "./models/server/"
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
-        # TODO even the following line has to be modified
-        # The following line should be made by external controller
+
+        # TODO The following line should be made by external controller
         self.model_configuration = ModelConfiguration("VGG16", 5)
         self.instantiate_model(model_configuration=self.model_configuration)
 
@@ -88,6 +86,10 @@ class ControllerInterfaceService:
     def get_state(self, element_id):
         return self.element_table.get_element_state(element_id)
 
+    def set_state(self, element_id, state):
+        self.element_table.set_element_state(element_id, state)
+        return self.get_state(element_id=element_id)
+
     def register_element(self, local_config: ElementConfiguration):
         element_id = str(uuid.uuid4().hex)
         if local_config.type is not ElementType.CLIENT:
@@ -107,7 +109,7 @@ class ControllerInterfaceService:
         """
 
         reader = {ElementType.CLIENT: open(self.device_model_path, "rb"),
-                  ElementType.SINK: open(self.server_model_path, "rb")
+                  ElementType.CLOUD: open(self.server_model_path, "rb")
                   }[server_type]
 
         reader.seek(offset)
@@ -116,16 +118,3 @@ class ControllerInterfaceService:
         reader.seek(0, 2)
 
         return FileChunk(data, remaining=reader.tell()-current_position)
-
-
-if __name__ == '__main__':
-    service = ControllerInterfaceService()
-    id = service.register_element(
-        ElementConfiguration(ElementType.CONTROLLER, ip='localhost', port=10100))
-    to_print = service.get_new_configuration()
-    print(to_print)
-
-    print("Starting python server...")
-    processor = ControllerInterface.Processor(service)
-    server = Server(ServerType.THREADED, processor, port=10100)
-    server.serve()

@@ -1,6 +1,6 @@
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
-from interfaces import LoggerInterface
+from interfaces import LogInterface
 
 
 class Logger:
@@ -8,7 +8,7 @@ class Logger:
         self.transport = TSocket.TSocket(conf_server_ip, port)
         self.transport = TTransport.TBufferedTransport(self.transport)
         self.protocol = TBinaryProtocol.TBinaryProtocol(self.transport)
-        self.server_interface = LoggerInterface.Client(self.protocol)
+        self.server_interface = LogInterface.Client(self.protocol)
 
     def connect_to_logger_server(self):
         self.transport.open()
