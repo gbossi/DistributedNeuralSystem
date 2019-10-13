@@ -3,17 +3,18 @@ from utils.surgeon import Surgeon
 from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk
 from interfaces.ttypes import ModelState, ModelConfiguration
 import os, uuid
+import pandas as pd
 
 
 class ElementTable:
     def __init__(self):
-        self.element_dict = {}
+        self.elements_table = pd.DataFrame()
 
     def insert(self, element_id, element_type, element_ip='unavailable', element_port=0,
                element_state=ElementState.WAITING):
-        self.element_dict.update({element_id:
-                                      {'type': element_type, 'ip': element_ip, 'port': element_port,
-                                       'state': element_state}})
+        new_row = pd.DataFrame([{'type': element_type, 'ip': element_ip,
+                                 'port': element_port, 'state': element_state}], index=[element_id])
+        self.elements_table = self.elements_table.append(new_row)
 
     def trigger_state(self):
         if self.exist_waiting_type(ElementType.SINK):
@@ -24,34 +25,28 @@ class ElementTable:
                     self.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
 
     def get_server_configuration(self):
-        print(self.element_dict.values())
-        server_configurations = []
-        for element in self.element_dict.values():
-            print(element)
-            if element and element['type'] != ElementType.CLIENT:
-                server_configurations += [ElementConfiguration(element['type'], element['ip'], element['port'])]
-        print(server_configurations)
-        return server_configurations
+        filter_configuration = self.elements_table[self.elements_table['type'] != ElementType.CLIENT]
+        elements_configurations = []
+        for element in filter_configuration.itertuples(index=False):
+            elements_configurations += [ElementConfiguration(getattr(element, 'type'), getattr(element, 'ip'),
+                                                             getattr(element, 'port'))]
+        return elements_configurations
 
     def get_element_state(self, element_id):
-        return self.element_dict.get(element_id)['state']
+        return self.elements_table.loc[[element_id], ['state']].values[0].item()
 
     def set_element_state(self, element_id, state):
-        old_element = self.element_dict.get(element_id)
-        new_element = old_element.update({'state': state})
-        self.element_dict.update({'element_id': new_element})
+        self.elements_table.at[element_id, 'state'] = state
         return self.get_element_state(element_id)
 
     def exist_waiting_type(self, element_type: ElementType):
-        if len([x for x in self.element_dict.values() if x['type'] is element_type and x['state'] is ElementState.RUNNING]) != 0:
+        if ElementState.WAITING in self.elements_table['type' == element_type]:
             return True
         else:
             return False
 
     def update_state_by_type(self, element_type: ElementType, state: ElementState):
-        for element in self.element_dict.items():
-            if element[1]['type'] is element_type:
-                self.element_dict[element[0]]['state'] = state
+        self.elements_table.loc[self.elements_table['type'] == element_type, 'state'] = state
 
 
 class ControllerInterfaceService:
@@ -86,15 +81,15 @@ class ControllerInterfaceService:
     def get_state(self, element_id):
         return self.element_table.get_element_state(element_id)
 
-    def set_state(self, element_id, state):
+    def set_state(self, element_id: str, state: ElementState):
         self.element_table.set_element_state(element_id, state)
         return self.get_state(element_id=element_id)
 
     def register_element(self, local_config: ElementConfiguration):
         element_id = str(uuid.uuid4().hex)
-        if local_config.type is not ElementType.CLIENT:
+        if local_config.type in [ElementType.CONTROLLER, ElementType.LOGGER, ElementType.CLOUD]:
             self.element_table.insert(element_id, local_config.type, local_config.ip, local_config.port)
-        else:
+        elif local_config.type is ElementType.CLIENT:
             self.element_table.insert(element_id, local_config.type)
         return element_id
 

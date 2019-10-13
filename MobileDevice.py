@@ -28,7 +28,6 @@ class MobileDevice:
         self.element_type = ElementType.CLIENT
         self.controller = ControllerClient(self.element_type)
         self.controller.connect_to_configuration_server()
-        self.controller.register_controller()
         self.controller.set_state(ElementState.RUNNING)
         self.remote_configurations = self.controller.get_servers_configuration()
         #self.keras_model = self.controller.download_model()

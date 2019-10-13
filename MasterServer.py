@@ -23,6 +23,7 @@ if __name__ == '__main__':
     print("Starting Master Server \n Available services:\n- Controller Service\n- Logger Service")
     controller_service.set_state(id_controller, ElementState.RUNNING)
     controller_service.set_state(id_logger, ElementState.RUNNING)
+
     server = Server(ServerType.THREADED, processor, port=10100)
     server.serve()
 

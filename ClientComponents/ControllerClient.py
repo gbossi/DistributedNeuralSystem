@@ -26,15 +26,16 @@ class ControllerClient:
 
     def connect_to_configuration_server(self):
         self.transport.open()
+        self.register_controller()
 
     def disconnect_to_configuration_server(self):
+        #final operation to be done
         self.transport.close()
 
     def register_controller(self, server_ip="localhost", server_port=0):
         local_config = {
             ElementType.LOGGER: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
             ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
-            # ElementType.SINK: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
             ElementType.CLIENT: ElementConfiguration(type=self.element_type)
         }[self.element_type]
 
