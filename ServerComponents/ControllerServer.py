@@ -5,7 +5,7 @@ from interfaces.ttypes import ModelState, ModelConfiguration
 import os, uuid
 import pandas as pd
 
-
+# todo the following class need to stay inside utils external class
 class ElementTable:
     def __init__(self):
         self.elements_table = pd.DataFrame()
@@ -50,6 +50,7 @@ class ElementTable:
 
 
 class ControllerInterfaceService:
+    # The following init should be made by the master server !!!! #TODO
     def __init__(self):
         self.device_model_path = "./models/client/"
         self.server_model_path = "./models/server/"

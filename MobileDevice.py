@@ -1,37 +1,27 @@
-#Controller Client
-#Connect to known server V
-#Put in wait state (5s) if everything not ready and ask again V
-#Get the settings V
-#Download the model V
-#Instantiate the model V
+# Cloud Client
+# Connect to Cloud server
 
-#Log Client
-#Connect to log server V
+# Send the prediction to the cloud
+# Check the state
 
-#Cloud Client
-#Connect to Cloud server
+import time
 
-
-#Cycle get images from local file folder
-#Predict
-#Send the prediction to the cloud
-#Check the state
-
-import cv2
-import numpy as np
-from interfaces.ttypes import ElementType, ElementState
 from ClientComponents.ControllerClient import ControllerClient
-from ClientComponents.LogClient import Logger
+from interfaces.ttypes import ElementType, ElementState
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIterator
+import numpy as np
+
 
 class MobileDevice:
     def __init__(self):
-        self.element_type = ElementType.CLIENT
-        self.controller = ControllerClient(self.element_type)
+        self.controller = ControllerClient(ElementType.CLIENT)
         self.controller.connect_to_configuration_server()
         self.controller.set_state(ElementState.RUNNING)
         self.remote_configurations = self.controller.get_servers_configuration()
-        #self.keras_model = self.controller.download_model()
-        #self.cloud_interface = self.connect_to_cloud()
+        self.keras_model = self.controller.download_model()
+        input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
+        self.datagen = ImageWithNames('./images_source/', ImageDataGenerator(), batch_size=16,
+                                      target_size=input_dimension, interpolation="nearest")
 
     def send_log(self, message):
         self.controller.send_log(message)
@@ -41,23 +31,58 @@ class MobileDevice:
             if type == server_config.type:
                 return server_config
 
-    def connect_to_log_server(self):
-        log_config = self.get_server_from_configuration(ElementType.LOGGER)
-        return Logger(conf_server_ip=log_config.ip, port=log_config.port).connect_to_logger_server()
+    def run(self):
+        i = 0
+        while (self.controller.get_state() == ElementState.RUNNING):
+            data_batch, filenames = next(self.datagen)
 
+            start = time.time()
+            predicted = self.keras_model.predict(data_batch)
+            end = time.time()
+            self.send_log(str(end-start))
+            print(predicted.shape)
+            print(filenames)
+            i += 1
+            if (i == 10):
+                exit()
+            # send the picture to the server
+            # send log with the perfomance done
+
+        if self.controller.current_state == ElementState.RESET:
+            # log connected to cloud server XXX
+            # disconnect from cloud server
+            self.configure_model_and_cloud()
+        if self.controller.current_state == ElementState.STOP:
+            # log disconnected
+            self.controller.disconnect_to_configuration_server()
+
+    def configure_model_and_cloud(self):
+        self.remote_configurations = self.controller.get_servers_configuration()
+        self.keras_model = self.controller.download_model()
+        input_dimension = tuple(self.keras_model.layers[1].input_shape[1:])
+        self.datagen = ImageWithNames('./images_source/', ImageDataGenerator(), batch_size=16,
+                                      target_size=input_dimension, interpolation="nearest")
+        # log model features maybe with a particular method that store the data in fashion way
+        # self.cloud_interface = self.connect_to_cloud()
+        # log connected to cloud server XXX
+        print(input_dimension)
 
 #    def connect_to_cloud_server(self):
 
 
-    @staticmethod
-    def adapt_image_to_model_dimension(image_tuple, input_dimension):
-        image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(
-            image_tuple.shape)
-        image_data = cv2.resize(image_data, tuple(input_dimension[0:2]), interpolation=cv2.INTER_AREA)
-        return image_data
+
+class ImageWithNames(DirectoryIterator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filenames_np = np.array(self.filepaths)
+        self.class_mode = None  # so that we only get the images back
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        return (super()._get_batches_of_transformed_samples(index_array),
+                self.filenames_np[index_array])
+
 
 if __name__ == '__main__':
     client = MobileDevice()
     client.send_log("ciao")
-
-
+    client.run()

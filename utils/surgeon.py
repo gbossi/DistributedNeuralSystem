@@ -20,9 +20,12 @@ class Surgeon:
         # Give a unique name that contains the information of the models
         modelA = tf.keras.Model(inputs=model.input, outputs=model.layers[split_layer-1].output,
                                 trainable=False, name=model.name+"_0-"+str(split_layer)+"_"+str(uuid.uuid1()))
+        modelA.compile(tf.keras.optimizers.RMSprop(lr=2e-4), loss='categorical_crossentropy', metrics=['acc'])
+
         modelB = tf.keras.Model(inputs=m_input, outputs=model_layers,
                                 trainable=False, name=model.name+"_"+str(split_layer)+"-"+
                                                       str(len(model.layers))+"_"+str(uuid.uuid1()))
+        modelB.compile(tf.keras.optimizers.RMSprop(lr=2e-4), loss='categorical_crossentropy', metrics=['acc'])
         return modelA, modelB
 
     def merge(self, modelA, modelB, merge_layer: int, is_trainable=False):

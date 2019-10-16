@@ -34,7 +34,6 @@ class ControllerClient:
 
     def register_controller(self, server_ip="localhost", server_port=0):
         local_config = {
-            ElementType.LOGGER: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
             ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
             ElementType.CLIENT: ElementConfiguration(type=self.element_type)
         }[self.element_type]
@@ -42,14 +41,15 @@ class ControllerClient:
         self.element_id = self.controller_interface.register_element(local_config)
 
     def get_servers_configuration(self):
+        #self.current_state = self.controller_interface.set_state(self.element_id, ElementState.WAITING)
         while self.current_state == ElementState.WAITING:
             time.sleep(WAITING_TIME)
             self.controller_interface.get_state(self.element_id)
-
         return self.controller_interface.get_new_configuration()
 
     def get_state(self):
         self.current_state = self.controller_interface.get_state(self.element_id)
+        return self.current_state
 
     def set_state(self, element_state: ElementState):
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
