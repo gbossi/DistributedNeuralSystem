@@ -45,7 +45,7 @@ struct Image{
     2:binary arr_bytes;
     3:string data_type;
     4:list<i16> shape;
-    5:bool last;
+    5:optional bool last;
 }
 
 struct FileChunk {
@@ -61,7 +61,7 @@ struct Message {
 
 service SinkInterface{
     void put_partial_result(1:Image result)
-    Image get_partial_result(1:i16 batch_dimension)
+    Image get_remote_partial_result(1:i16 batch_dimension)
 }
 
 

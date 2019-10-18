@@ -1,5 +1,5 @@
 from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
-from thrift.transport import TSocket,TTransport
+from thrift.transport import TSocket, TTransport
 from interfaces import ControllerInterface, LogInterface
 from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message
 import tensorflow as tf
@@ -26,10 +26,11 @@ class ControllerClient:
 
     def connect_to_configuration_server(self):
         self.transport.open()
-        self.register_controller()
+
 
     def disconnect_to_configuration_server(self):
         #final operation to be done
+        #like set state to stop and log the stop
         self.transport.close()
 
     def register_controller(self, server_ip="localhost", server_port=0):
@@ -41,7 +42,7 @@ class ControllerClient:
         self.element_id = self.controller_interface.register_element(local_config)
 
     def get_servers_configuration(self):
-        #self.current_state = self.controller_interface.set_state(self.element_id, ElementState.WAITING)
+        self.current_state = self.controller_interface.set_state(self.element_id, ElementState.WAITING)
         while self.current_state == ElementState.WAITING:
             time.sleep(WAITING_TIME)
             self.controller_interface.get_state(self.element_id)
@@ -59,7 +60,12 @@ class ControllerClient:
         batch_dimension = 100000  # 100 KB
         current_position = 0
         remaining = 1
-        writer = open("./client.h5", "wb")
+
+        filename = {ElementType.CLIENT: "./client.h5",
+                  ElementType.CLOUD: "./cloud.h5"
+                  }[self.element_type]
+
+        writer = open(filename, "wb")
 
         while remaining:
             file_chunk = self.controller_interface.get_model_chunk(self.element_type,
@@ -70,7 +76,7 @@ class ControllerClient:
                 batch_dimension = remaining
             writer.write(file_chunk.data)
 
-        return tf.keras.models.load_model("./client.h5")
+        return tf.keras.models.load_model(filename)
 
     def send_log(self, message: str):
         self.logger_interface.log_message(Message(self.element_id, self.element_type, message))
