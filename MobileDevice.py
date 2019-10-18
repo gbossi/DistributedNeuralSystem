@@ -56,9 +56,8 @@ class MobileDevice:
             print(predicted.shape)
             print(filenames)
             i += 1
-            if (i == 10):
+            if i == 10:
                 exit()
-            # send the picture to the server
 
         if self.controller.current_state == ElementState.RESET:
             # log connected to cloud server XXX
@@ -78,9 +77,6 @@ class MobileDevice:
         # self.cloud_interface = self.connect_to_cloud()
         # log connected to cloud server XXX
         print(input_dimension)
-
-#    def connect_to_cloud_server(self):
-
 
 
 class ImageWithNames(DirectoryIterator):

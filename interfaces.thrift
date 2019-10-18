@@ -54,9 +54,10 @@ struct FileChunk {
 }
 
 struct Message {
-    1:string id;
-    2:ElementType server_type;
-    3:string message;
+    1:double timestamp;
+    2:string id;
+    3:ElementType server_type;
+    4:string message;
 }
 
 service SinkInterface{

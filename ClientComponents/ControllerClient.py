@@ -79,4 +79,4 @@ class ControllerClient:
         return tf.keras.models.load_model(filename)
 
     def send_log(self, message: str):
-        self.logger_interface.log_message(Message(self.element_id, self.element_type, message))
+        self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))
