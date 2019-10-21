@@ -1,8 +1,10 @@
+import threading
+import time
+
 from ClientComponents.ControllerClient import ControllerClient
 from ServerComponents.SinkServer import SinkInterfaceService
-from interfaces.ttypes import ElementType, ElementState
 from interfaces import SinkInterface
-import threading, time
+from interfaces.ttypes import ElementType, ElementState
 from utils.thrift_servers import Server, ServerType
 
 BATCH_DIM = 8
@@ -28,7 +30,6 @@ class CloudServer(threading.Thread):
                 predicted = self.cloud_model.predict(data_batch)
                 end = time.time()
                 self.controller.send_log(str(end-start))
-                print(predicted)
             if self.sink.queue.qsize() == 0:
                 time.sleep(3)
                 print('sleeping')

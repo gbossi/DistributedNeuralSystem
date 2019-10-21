@@ -22,14 +22,12 @@ class MobileDevice:
         self.controller = ControllerClient(ElementType.CLIENT)
         self.controller.connect_to_configuration_server()
         self.controller.register_controller()
-        # The following line should be removed
-        self.controller.set_state(ElementState.RUNNING)
         self.remote_configurations = self.controller.get_servers_configuration().elements_configuration
         cloud_server = self.get_server_from_configuration(ElementType.CLOUD)
-        print(cloud_server.ip + str(cloud_server.port))
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
         self.sink_client.connect_to_sink_service()
         self.keras_model = self.controller.download_model()
+        #log summary of the model
         input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
         self.datagen = ImageWithNames(IMAGES_SOURCE, ImageDataGenerator(), batch_size=BATCH_SIZE,
                                       target_size=input_dimension, interpolation="nearest")
@@ -53,8 +51,6 @@ class MobileDevice:
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.send_log(str(end-start))
-            print(predicted.shape)
-            print(filenames)
             i += 1
             if i == 10:
                 exit()

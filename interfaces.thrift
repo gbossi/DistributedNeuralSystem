@@ -12,7 +12,6 @@ enum ElementType{
 
 enum ElementState{
     WAITING
-    READY
     RUNNING
     RESET
     STOP
@@ -70,12 +69,17 @@ service ControllerInterface{
     Configuration get_new_configuration()
     ElementState get_state(1:string element_id)
     ElementState set_state(1:string element_id, 2:ElementState new_state)
-    FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size);
+    FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
 }
 
-/*    Configuration get_new_configuration(1:LocalSettings settings) */
-
+service MasterInterface{
+    bool setModel(1:ModelConfiguration model_configuration)
+    bool setModelState(1:ModelState model_state)
+    Configuration get_current_configutation()
+    bool reset()
+    bool stop()
+}
 
 service LogInterface{
     void log_message(1:Message log_message)
