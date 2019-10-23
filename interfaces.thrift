@@ -71,6 +71,7 @@ service ControllerInterface{
     ElementState set_state(1:string element_id, 2:ElementState new_state)
     FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
+    bool is_model_available()
 }
 
 service MasterInterface{

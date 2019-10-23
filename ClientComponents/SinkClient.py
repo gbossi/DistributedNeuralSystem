@@ -14,6 +14,9 @@ class SinkClient:
     def connect_to_sink_service(self):
         self.transport.open()
 
+    def disconnect_from_sink_service(self):
+        self.transport.close()
+
     def put_partial_result(self, image_ids, prediction):
         data = Image(image_ids, prediction.tobytes(), prediction.dtype.name, prediction.shape)
         self.server_interface.put_partial_result(data)

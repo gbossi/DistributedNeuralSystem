@@ -38,7 +38,14 @@ class ControllerInterfaceService:
 
         self.model_state = ModelState.AVAILABLE
 
+    def trigger_state(self, element_id):
+        if self.element_table.get_element_type(element_id) is ElementType.CLIENT:
+            if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
+                if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
+                    self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+
     def get_state(self, element_id):
+        self.trigger_state(element_id)
         return self.element_table.get_element_state(element_id)
 
     def set_state(self, element_id: str, state: ElementState):
@@ -58,6 +65,12 @@ class ControllerInterfaceService:
 
     def get_new_configuration(self):
         return Configuration(self.element_table.get_server_configuration())
+
+    def is_model_available(self):
+        if self.model_state != ModelState.AVAILABLE:
+            return False
+        else:
+            return True
 
     def get_model_chunk(self, server_type: ElementType, offset: int, size: int):
         """Function used to download the partial neural network model by the

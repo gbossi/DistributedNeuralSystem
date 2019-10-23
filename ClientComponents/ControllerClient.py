@@ -5,8 +5,9 @@ from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, M
 import tensorflow as tf
 import time
 
-# Initial synchronizing time expressed in seconds
 WAITING_TIME = 5
+IP_MASTER_SERVER = 'localhost'
+PORT_MASTER_SERVER = 10100
 
 
 class ControllerClient:
@@ -27,10 +28,7 @@ class ControllerClient:
     def connect_to_configuration_server(self):
         self.transport.open()
 
-
     def disconnect_to_configuration_server(self):
-        #final operation to be done
-        #like set state to stop and log the stop
         self.transport.close()
 
     def register_controller(self, server_ip="localhost", server_port=0):
@@ -42,13 +40,12 @@ class ControllerClient:
         self.element_id = self.controller_interface.register_element(local_config)
 
     def get_servers_configuration(self):
-        self.current_state = self.controller_interface.set_state(self.element_id, ElementState.WAITING)
         while self.current_state == ElementState.WAITING:
             time.sleep(WAITING_TIME)
-            self.controller_interface.get_state(self.element_id)
+            self.update_state()
         return self.controller_interface.get_new_configuration()
 
-    def get_state(self):
+    def update_state(self):
         self.current_state = self.controller_interface.get_state(self.element_id)
         return self.current_state
 
@@ -57,13 +54,17 @@ class ControllerClient:
         return True
 
     def download_model(self):
+
+        while not self.controller_interface.is_model_available:
+            time.sleep(WAITING_TIME)
+
         batch_dimension = 100000  # 100 KB
         current_position = 0
         remaining = 1
 
         filename = {ElementType.CLIENT: "./client.h5",
-                  ElementType.CLOUD: "./cloud.h5"
-                  }[self.element_type]
+                    ElementType.CLOUD: "./cloud.h5"
+                    }[self.element_type]
 
         writer = open(filename, "wb")
 

@@ -42,8 +42,9 @@ class MobileDevice:
                 return server_config
 
     def run(self):
+        #TODO following line to be removed
         i = 0
-        while (self.controller.get_state() == ElementState.RUNNING):
+        while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = next(self.datagen)
 
             start = time.time()
@@ -51,35 +52,39 @@ class MobileDevice:
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.send_log(str(end-start))
+            #TODO following 3 lines to be removed
             i += 1
             if i == 10:
                 exit()
 
         if self.controller.current_state == ElementState.RESET:
-            # log connected to cloud server XXX
-            # disconnect from cloud server
+            self.controller.send_log("Disconnecting from all other server")
+            self.sink_client.disconnect_from_sink_service()
+            self.controller.send_log("Waiting a new model from master server")
             self.reconfigure()
+
         if self.controller.current_state == ElementState.STOP:
-            # log disconnected
+            self.controller.send_log("Shutting down the mobile device")
             self.controller.disconnect_to_configuration_server()
 
     def reconfigure(self):
-        self.remote_configurations = self.controller.get_servers_configuration()
+        self.remote_configurations = self.controller.get_servers_configuration().elements_configuration
+        cloud_server = self.get_server_from_configuration(ElementType.CLOUD)
+        self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
+        self.sink_client.connect_to_sink_service()
         self.keras_model = self.controller.download_model()
+        # log summary of the model
         input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
-        self.datagen = ImageWithNames('./images_source/', ImageDataGenerator(), batch_size=32,
+        self.datagen = ImageWithNames(IMAGES_SOURCE, ImageDataGenerator(), batch_size=BATCH_SIZE,
                                       target_size=input_dimension, interpolation="nearest")
-        # log model features maybe with a particular method that store the data in fashion way
-        # self.cloud_interface = self.connect_to_cloud()
-        # log connected to cloud server XXX
-        print(input_dimension)
+        self.run()
 
 
 class ImageWithNames(DirectoryIterator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filenames_np = np.array(self.filepaths)
-        self.class_mode = None  # so that we only get the images back
+        self.class_mode = None
 
     def _get_batches_of_transformed_samples(self, index_array):
         return (super()._get_batches_of_transformed_samples(index_array),
