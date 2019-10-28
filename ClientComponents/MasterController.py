@@ -2,15 +2,14 @@ from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
 from thrift.transport import TSocket, TTransport
 from interfaces import ControllerInterface, LogInterface
 from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message
-import tensorflow as tf
 import time
+import subprocess
 
-WAITING_TIME = 5
 IP_MASTER_SERVER = 'localhost'
 PORT_MASTER_SERVER = 10100
 
 
-class ControllerClient:
+class MasterController:
     def __init__(self, element_type: ElementType, server_ip='localhost', port=10100):
         self.socket = TSocket.TSocket(server_ip, port)
         self.transport = TTransport.TBufferedTransport(self.socket)
@@ -32,52 +31,27 @@ class ControllerClient:
         self.transport.close()
 
     def register_controller(self, server_ip="localhost", server_port=0):
+        """
+        This function register a new element in the element table of the master server
+        and publish on the logger a summary of the installed hardware, in this way
+        the local controller acquire a valid element id.
+
+        :param server_ip: address of the client to be registered
+        :param server_port: port of the client to be registered
+        :return: null
+        """
         local_config = {
             ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
-            ElementType.CLIENT: ElementConfiguration(type=self.element_type)
+            ElementType.CLIENT: ElementConfiguration(type=self.element_type),
+            ElementType.CONTROLLER: ElementConfiguration(type=self.element_type)
         }[self.element_type]
 
         self.element_id = self.controller_interface.register_element(local_config)
 
-    def get_servers_configuration(self):
-        while self.current_state == ElementState.WAITING:
-            time.sleep(WAITING_TIME)
-            self.update_state()
-        return self.controller_interface.get_new_configuration()
-
-    def update_state(self):
-        self.current_state = self.controller_interface.get_state(self.element_id)
-        return self.current_state
-
-    def set_state(self, element_state: ElementState):
-        self.current_state = self.controller_interface.set_state(self.element_id, element_state)
-        return True
-
-    def download_model(self):
-
-        while not self.controller_interface.is_model_available:
-            time.sleep(WAITING_TIME)
-
-        batch_dimension = 100000  # 100 KB
-        current_position = 0
-        remaining = 1
-
-        filename = {ElementType.CLIENT: "./client.h5",
-                    ElementType.CLOUD: "./cloud.h5"
-                    }[self.element_type]
-
-        writer = open(filename, "wb")
-
-        while remaining:
-            file_chunk = self.controller_interface.get_model_chunk(self.element_type,
-                                                                   current_position, batch_dimension)
-            current_position += batch_dimension
-            remaining = file_chunk.remaining
-            if batch_dimension < remaining:
-                batch_dimension = remaining
-            writer.write(file_chunk.data)
-
-        return tf.keras.models.load_model(filename)
+        self.logger_interface.send_log_message(
+            subprocess.run(['lshw', '-short'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+        self.logger_interface.send_log_message(
+            subprocess.run(['lsb_release', '-a'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
 
     def send_log(self, message: str):
         self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))

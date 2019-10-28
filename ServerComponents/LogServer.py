@@ -2,6 +2,14 @@ from ttypes import Message
 import time, queue
 
 
+# cartelle
+#   -Hardware: NomeMacchina
+#       -Applicazione: CNN
+#           -Configurazione: rete // Dimensione dati // numero-campioni taglio
+#                  -Timestamp:
+#                       -Ripetizione:
+#                              Dump info relativo hardware
+
 class LogServerInterfaceService:
     def __init__(self):
         self.messageQueue = queue.Queue()

@@ -17,9 +17,15 @@ class ControllerInterfaceService:
         self.model_configuration = ModelConfiguration("VGG16", 5)
         self.instantiate_model(model_configuration=self.model_configuration)
 
+
     def instantiate_model(self, model_configuration: ModelConfiguration):
-        """Given a configuration, this function initializes the model that
-        the servers and the client will download"""
+        """
+        Given a configuration, this function initializes the model that
+        the servers and the client will download
+
+        :param model_configuration: A model name and a split layer
+        :return: None
+        """
 
         device_model, server_model = Surgeon().split(
             ModelFactory().get_new_model(model_configuration.model_name),
@@ -39,10 +45,12 @@ class ControllerInterfaceService:
         self.model_state = ModelState.AVAILABLE
 
     def trigger_state(self, element_id):
-        if self.element_table.get_element_type(element_id) is ElementType.CLIENT:
-            if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
-                if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
-                    self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+        if self.model_state is ModelState.AVAILABLE:
+            if self.element_table.get_element_type(element_id) in [ElementType.CLIENT, ElementType.CLOUD]:
+                if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
+                    if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
+                        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+
 
     def get_state(self, element_id):
         self.trigger_state(element_id)
@@ -52,19 +60,32 @@ class ControllerInterfaceService:
         self.element_table.set_element_state(element_id, state)
         return self.get_state(element_id=element_id)
 
+    def set_model_state(self, model_state: ModelState):
+        self.model_state = model_state
+
     def register_element(self, local_config: ElementConfiguration):
-        """When a new element of the distributed network connects to the controller service
-        first it registers inside the element table"""
+        """
+        When a new element of the distributed network connects to the controller service
+        first it registers inside the element table
+
+        :param local_config: register a local configuration
+        :return: a unique id
+        """
 
         element_id = str(uuid.uuid4().hex)
         if local_config.type in [ElementType.CONTROLLER, ElementType.LOGGER, ElementType.CLOUD]:
             self.element_table.insert(element_id, local_config.type, local_config.ip, local_config.port)
         elif local_config.type is ElementType.CLIENT:
             self.element_table.insert(element_id, local_config.type)
+        elif local_config.type is ElementType.CONTROLLER:
+            self.element_table.insert(element_id, local_config.type, element_state=ElementState.RUNNING)
         return element_id
 
-    def get_new_configuration(self):
-        return Configuration(self.element_table.get_server_configuration())
+    def get_servers_configuration(self):
+        return Configuration(self.element_table.get_servers_configuration())
+
+    def get_complete_configuration(self):
+        return Configuration(self.element_table.get_complete_configuration())
 
     def is_model_available(self):
         if self.model_state != ModelState.AVAILABLE:
@@ -73,9 +94,16 @@ class ControllerInterfaceService:
             return True
 
     def get_model_chunk(self, server_type: ElementType, offset: int, size: int):
-        """Function used to download the partial neural network model by the
+        """
+        Function used to download the partial neural network model by the
         clients and the computational server, depending on the type it will
-        return a different model"""
+        return a different model
+
+        :param server_type: define the type of the model to be sent
+        :param offset: define the offset
+        :param size: define the size requested
+        :return: a binary file chunk
+        """
 
         reader = {ElementType.CLIENT: open(self.device_model_path, "rb"),
                   ElementType.CLOUD: open(self.server_model_path, "rb")

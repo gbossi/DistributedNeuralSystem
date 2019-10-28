@@ -9,3 +9,4 @@ class ModelFactory:
             return tf.keras.applications.MobileNet(weights='imagenet')
         elif model_name == "VGG19":
             return tf.keras.applications.VGG19(weights='imagenet')
+

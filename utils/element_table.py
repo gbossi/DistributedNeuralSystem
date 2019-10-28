@@ -12,12 +12,22 @@ class ElementTable:
                                  'port': element_port, 'state': element_state}], index=[element_id])
         self.elements_table = self.elements_table.append(new_row)
 
-    def get_server_configuration(self):
+    def get_servers_configuration(self):
         filter_configuration = self.elements_table[self.elements_table['type'] != ElementType.CLIENT]
         elements_configurations = []
         for element in filter_configuration.itertuples(index=False):
-            elements_configurations += [ElementConfiguration(getattr(element, 'type'), getattr(element, 'ip'),
-                                                             getattr(element, 'port'))]
+            elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
+                                                             ip=getattr(element, 'ip'),
+                                                             port=getattr(element, 'port'))]
+        return elements_configurations
+
+    def get_complete_configuration(self):
+        elements_configurations = []
+        for element in self.elements_table.itertuples(index=False):
+            elements_configurations += [ElementConfiguration(id=element.index,
+                                                             type=getattr(element, 'type'),
+                                                             ip=getattr(element, 'ip'),
+                                                             port=getattr(element, 'port'))]
         return elements_configurations
 
     def get_element_state(self, element_id):

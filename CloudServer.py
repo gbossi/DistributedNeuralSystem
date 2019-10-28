@@ -1,22 +1,24 @@
 import threading
 import time
 
-from ClientComponents.ControllerClient import ControllerClient
+from ClientComponents.InternalController import InternalController
 from ServerComponents.SinkServer import SinkInterfaceService
 from interfaces import SinkInterface
 from interfaces.ttypes import ElementType, ElementState
 from utils.thrift_servers import Server, ServerType
 
 BATCH_DIM = 8
+IP_SINK = "localhost"
+SINK_PORT = 20200
+IP_MASTER = "localhost"
+MASTER_PORT = 10100
 
 
 class CloudServer(threading.Thread):
     def __init__(self, sink: SinkInterfaceService):
         super(CloudServer, self).__init__()
-        self.controller = ControllerClient(ElementType.CLOUD, server_ip='localhost', port='10100')
+        self.controller = InternalController(ElementType.CLOUD, server_ip=IP_MASTER, port=MASTER_PORT)
         self.controller.connect_to_configuration_server()
-        self.controller.register_controller("localhost", server_port=20200)
-        #Check if the model is available otherwise go into a cycle
         self.cloud_model = self.controller.download_model()
         self.sink = sink
 
@@ -28,7 +30,7 @@ class CloudServer(threading.Thread):
                 start = time.time()
                 predicted = self.cloud_model.predict(data_batch)
                 end = time.time()
-                self.controller.send_log(str(end-start))
+                self.controller.send_log(str(end-start) + id_list)
             if self.sink.queue.qsize() == 0:
                 time.sleep(3)
                 print('Sleeping')
@@ -49,6 +51,7 @@ if __name__ == '__main__':
     cloud_server.start()
     print("Cloud Server Started")
 
-    server = Server(ServerType.THREADED, processor, port=20200)
+    cloud_server.controller.register_controller(IP_SINK, server_port=SINK_PORT)
+    server = Server(ServerType.THREADED, processor, port=SINK_PORT)
     print("Sink Server Started")
     server.serve()

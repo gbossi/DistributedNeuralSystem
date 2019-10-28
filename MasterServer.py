@@ -10,17 +10,20 @@ if __name__ == '__main__':
     processor = TMultiplexedProcessor()
 
     controller_service = ControllerInterfaceService()
+    # TODO following line not so usefull
     id_controller = controller_service.register_element(
         ElementConfiguration(ElementType.CONTROLLER, ip='localhost', port=10100))
 
     logger_service = LogServerInterfaceService()
+
+    # TODO following line not so usefull
     id_logger = controller_service.register_element(
         ElementConfiguration(ElementType.LOGGER, ip='localhost', port=10100))
 
     processor.registerProcessor("Controller", ControllerInterface.Processor(controller_service))
     processor.registerProcessor("Logger", LogInterface.Processor(logger_service))
 
-    print("Starting Master Server \n Available services:\n- Controller Service\n- Logger Service")
+    print("Starting Master Server \nAvailable services:\n- Controller Service\n- Logger Service")
     controller_service.set_state(id_controller, ElementState.RUNNING)
     controller_service.set_state(id_logger, ElementState.RUNNING)
 
