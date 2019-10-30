@@ -48,10 +48,20 @@ class MasterController:
 
         self.element_id = self.controller_interface.register_element(local_config)
 
-        self.logger_interface.send_log_message(
-            subprocess.run(['lshw', '-short'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
-        self.logger_interface.send_log_message(
-            subprocess.run(['lsb_release', '-a'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+        command = subprocess.run(['lshw', '-short'], stdout=subprocess.PIPE)
+        message_list = command.stdout.decode().split('\n')
+        if command.returncode == 0:
+            for message in message_list:
+                print(message)
+        else:
+            self.logger_interface.send_log_message("Unable to understand hardware specs")
+        command = subprocess.run(['lsb_release', '-a'], stdout=subprocess.PIPE)
+        if command.returncode == 0:
+            pass
+            # self.logger_interface.send_log_message(command.stdout.decode())
+        else:
+            self.logger_interface.send_log_message("Unable to understand installed OS")
+
 
     def send_log(self, message: str):
         self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))

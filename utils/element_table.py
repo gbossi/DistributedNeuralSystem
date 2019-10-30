@@ -48,3 +48,4 @@ class ElementTable:
 
     def update_state_by_type(self, element_type: ElementType, state: ElementState):
         self.elements_table.loc[self.elements_table['type'] == element_type, 'state'] = state
+

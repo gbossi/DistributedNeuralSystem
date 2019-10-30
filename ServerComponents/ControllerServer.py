@@ -13,10 +13,7 @@ class ControllerInterfaceService:
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
 
-        # TODO The following line should be made by external controller
-        self.model_configuration = ModelConfiguration("VGG16", 5)
-        self.instantiate_model(model_configuration=self.model_configuration)
-
+    # --------- MODEL HANDLING SECTION --------- #
 
     def instantiate_model(self, model_configuration: ModelConfiguration):
         """
@@ -44,48 +41,11 @@ class ControllerInterfaceService:
 
         self.model_state = ModelState.AVAILABLE
 
-    def trigger_state(self, element_id):
-        if self.model_state is ModelState.AVAILABLE:
-            if self.element_table.get_element_type(element_id) in [ElementType.CLIENT, ElementType.CLOUD]:
-                if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
-                    if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
-                        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
-
-
-    def get_state(self, element_id):
-        self.trigger_state(element_id)
-        return self.element_table.get_element_state(element_id)
-
-    def set_state(self, element_id: str, state: ElementState):
-        self.element_table.set_element_state(element_id, state)
-        return self.get_state(element_id=element_id)
+        return model_configuration
 
     def set_model_state(self, model_state: ModelState):
         self.model_state = model_state
-
-    def register_element(self, local_config: ElementConfiguration):
-        """
-        When a new element of the distributed network connects to the controller service
-        first it registers inside the element table
-
-        :param local_config: register a local configuration
-        :return: a unique id
-        """
-
-        element_id = str(uuid.uuid4().hex)
-        if local_config.type in [ElementType.CONTROLLER, ElementType.LOGGER, ElementType.CLOUD]:
-            self.element_table.insert(element_id, local_config.type, local_config.ip, local_config.port)
-        elif local_config.type is ElementType.CLIENT:
-            self.element_table.insert(element_id, local_config.type)
-        elif local_config.type is ElementType.CONTROLLER:
-            self.element_table.insert(element_id, local_config.type, element_state=ElementState.RUNNING)
-        return element_id
-
-    def get_servers_configuration(self):
-        return Configuration(self.element_table.get_servers_configuration())
-
-    def get_complete_configuration(self):
-        return Configuration(self.element_table.get_complete_configuration())
+        return model_state
 
     def is_model_available(self):
         if self.model_state != ModelState.AVAILABLE:
@@ -115,3 +75,59 @@ class ControllerInterfaceService:
         reader.seek(0, 2)
 
         return FileChunk(data, remaining=reader.tell()-current_position)
+
+    # --------- ELEMENT HANDLING SECTION --------- #
+
+    def register_element(self, local_config: ElementConfiguration):
+        """
+        When a new element of the distributed network connects to the controller service
+        first it registers inside the element table
+
+        :param local_config: register a local configuration
+        :return: a unique id
+        """
+
+        element_id = str(uuid.uuid4().hex)
+        if local_config.type is ElementType.CLOUD:
+            self.element_table.insert(element_id, local_config.type, local_config.ip, local_config.port)
+        elif local_config.type is ElementType.CLIENT:
+            self.element_table.insert(element_id, local_config.type)
+        elif local_config.type is ElementType.CONTROLLER:
+            self.element_table.insert(element_id, local_config.type, element_state=ElementState.RUNNING)
+        return element_id
+
+    def trigger_state(self, element_id):
+        if self.model_state is ModelState.AVAILABLE:
+            if self.element_table.get_element_type(element_id) in [ElementType.CLIENT, ElementType.CLOUD]:
+                if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
+                    if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
+                        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+
+    def get_state(self, element_id):
+        self.trigger_state(element_id)
+        return self.element_table.get_element_state(element_id)
+
+    def set_state(self, element_id: str, state: ElementState):
+        self.element_table.set_element_state(element_id, state)
+        return self.get_state(element_id=element_id)
+
+    # --------- SYSTEM STATE HANDLING SECTION --------- #
+
+    def stop(self):
+        self.set_model_state(ModelState.DIRT)
+        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.STOP)
+        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.STOP)
+
+    def reset(self):
+        self.set_model_state(ModelState.DIRT)
+        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
+        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
+
+    # --------- CONFIGURATION HANDLING SECTION --------- #
+
+    def get_servers_configuration(self):
+        return Configuration(self.element_table.get_servers_configuration())
+
+    def get_complete_configuration(self):
+        return Configuration(self.element_table.get_complete_configuration())
+

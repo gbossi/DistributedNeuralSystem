@@ -11,8 +11,7 @@ class ExternalController(MasterController):
         return self.controller_interface.get_complete_configuration()
 
     def instantiate_model(self, model_name: str, split_layer: int):
-        model_config = ModelConfiguration(model_name=model_name, split_layer=split_layer)
-        self.controller_interface.set_model(model_config)
+        self.controller_interface.instantiate_model(ModelConfiguration(model_name=model_name, split_layer=split_layer))
 
     def set_model_state(self, state: ModelState):
         return self.controller_interface.set_model_state(model_state=state)

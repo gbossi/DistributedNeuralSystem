@@ -25,10 +25,8 @@ class InternalController(MasterController):
 
     def set_state(self, element_state: ElementState):
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
-        return True
 
     def download_model(self):
-
         while not self.controller_interface.is_model_available:
             time.sleep(WAITING_TIME)
 
