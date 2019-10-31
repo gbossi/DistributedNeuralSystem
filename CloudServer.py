@@ -21,6 +21,8 @@ class CloudServer(threading.Thread):
         self.controller.connect_to_configuration_server()
         self.cloud_model = self.controller.download_model()
         self.sink = sink
+        self.controller.register_controller(server_ip=IP_SINK, server_port=SINK_PORT)
+
 
     def run(self):
         self.controller.set_state(ElementState.RUNNING)
@@ -51,7 +53,6 @@ if __name__ == '__main__':
     cloud_server.start()
     print("Cloud Server Started")
 
-    cloud_server.controller.register_controller(IP_SINK, server_port=SINK_PORT)
     server = Server(ServerType.THREADED, processor, port=SINK_PORT)
     print("Sink Server Started")
     server.serve()

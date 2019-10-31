@@ -23,11 +23,11 @@ class ElementTable:
 
     def get_complete_configuration(self):
         elements_configurations = []
-        for element in self.elements_table.itertuples(index=False):
-            elements_configurations += [ElementConfiguration(id=element.index,
-                                                             type=getattr(element, 'type'),
+        for element in self.elements_table.itertuples():
+            elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
                                                              ip=getattr(element, 'ip'),
-                                                             port=getattr(element, 'port'))]
+                                                             port=getattr(element, 'port'),
+                                                             id=element.Index)]
         return elements_configurations
 
     def get_element_state(self, element_id):

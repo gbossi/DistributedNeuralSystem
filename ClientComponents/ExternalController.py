@@ -1,8 +1,10 @@
 from .MasterController import MasterController
-from interfaces.ttypes import ModelConfiguration, ModelState
+from interfaces.ttypes import ModelConfiguration, ModelState, ElementType
 
 
 class ExternalController(MasterController):
+    def __init__(self, element_type: ElementType, server_ip='localhost', port=10100):
+        super(ExternalController, self).__init__(element_type, server_ip, port)
 
     def get_complete_configuration(self):
         """

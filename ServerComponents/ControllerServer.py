@@ -8,8 +8,8 @@ import os, uuid
 
 class ControllerInterfaceService:
     def __init__(self):
-        self.device_model_path = "./models/client/"
-        self.server_model_path = "./models/server/"
+        self.device_base_path = "./models/client/"
+        self.server_base_path = "./models/server/"
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
 
@@ -28,15 +28,15 @@ class ControllerInterfaceService:
             ModelFactory().get_new_model(model_configuration.model_name),
             model_configuration.split_layer)
 
-        if not os.path.exists(self.device_model_path):
-            os.mkdir(self.device_model_path)
-        elif not os.path.exists(self.server_model_path):
-            os.mkdir(self.server_model_path)
+        if not os.path.exists(self.device_base_path):
+            os.mkdir(self.device_base_path)
+        elif not os.path.exists(self.server_base_path):
+            os.mkdir(self.server_base_path)
 
-        self.device_model_path = self.device_model_path+device_model.name+".h5"
+        self.device_model_path = self.device_base_path+device_model.name+".h5"
         device_model.save(self.device_model_path)
 
-        self.server_model_path = self.server_model_path+server_model.name+".h5"
+        self.server_model_path = self.server_base_path+server_model.name+".h5"
         server_model.save(self.server_model_path)
 
         self.model_state = ModelState.AVAILABLE
@@ -129,5 +129,7 @@ class ControllerInterfaceService:
         return Configuration(self.element_table.get_servers_configuration())
 
     def get_complete_configuration(self):
-        return Configuration(self.element_table.get_complete_configuration())
+        configuration = self.element_table.get_complete_configuration()
+        print(configuration)
+        return Configuration(configuration)
 

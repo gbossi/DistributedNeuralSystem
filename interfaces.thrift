@@ -24,10 +24,10 @@ enum ModelState{
 }
 
 struct ElementConfiguration{
-    1:optional string id;
-    2:ElementType type;
-    3:optional string ip;
-    4:optional i32 port;
+    1:ElementType type;
+    2:optional string ip;
+    3:optional i32 port;
+    4:optional string id;
 }
 
 struct ModelConfiguration{

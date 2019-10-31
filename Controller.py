@@ -4,8 +4,7 @@ import time
 
 IP_MASTER = "localhost"
 MASTER_PORT = 10100
-IMAGES_SOURCE = './images_source/'
-BATCH_SIZE = 8
+
 
 if __name__ == '__main__':
     controller = ExternalController(element_type=ElementType.CONTROLLER, server_ip=IP_MASTER, port=MASTER_PORT)
@@ -13,7 +12,9 @@ if __name__ == '__main__':
     controller.register_controller()
     controller.instantiate_model(model_name="VGG16", split_layer=8)
     controller.set_model_state(ModelState.AVAILABLE)
-    time.sleep(120)
+    for i in range(50):
+        time.sleep(5)
+        print(controller.get_complete_configuration())
     controller.stop()
 
 
