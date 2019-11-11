@@ -1,5 +1,5 @@
 from .MasterController import MasterController
-from interfaces.ttypes import ModelConfiguration, ModelState, ElementType
+from interfaces.ttypes import ModelConfiguration, ModelState, ElementType, Test
 
 
 class ExternalController(MasterController):
@@ -17,6 +17,10 @@ class ExternalController(MasterController):
 
     def set_model_state(self, state: ModelState):
         return self.controller_interface.set_model_state(model_state=state)
+
+    def set_test(self, is_test: bool, number_of_images: int, edge_batch_size: int, cloud_batch_size: int):
+        self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
+                                                edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
     def stop(self):
         self.controller_interface.stop()

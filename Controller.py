@@ -12,6 +12,7 @@ if __name__ == '__main__':
     controller.register_controller()
     controller.instantiate_model(model_name="VGG16", split_layer=8)
     controller.set_model_state(ModelState.AVAILABLE)
+    controller.set_test(True, number_of_images=100, edge_batch_size=1, cloud_batch_size=2)
     for i in range(50):
         time.sleep(5)
         print(controller.get_complete_configuration())

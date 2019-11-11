@@ -4,6 +4,7 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer, TNonblockingServer
 from enum import Enum
 
+
 class ServerType(Enum):
     SIMPLE = "simple"
     THREADED = "threaded"
@@ -24,9 +25,12 @@ class Server:
             "simple": TServer.TSimpleServer(processor, self.transport, self.tfactory, self.pfactory),
             "threaded": TServer.TThreadedServer(processor, self.transport, self.tfactory, self.pfactory),
             "poolThreaded": TServer.TThreadPoolServer(processor, self.transport, self.tfactory, self.pfactory),
-            "nonBlocking": TNonblockingServer.TNonblockingServer(processor, self.transport, self.tfactory, self.pfactory)
+            "nonBlocking": TNonblockingServer.TNonblockingServer(processor, self.transport, self.tfactory,
+                                                                 self.pfactory)
         }[server_type.value]
 
     def serve(self):
         self.server.serve()
 
+    def stop(self):
+        pass

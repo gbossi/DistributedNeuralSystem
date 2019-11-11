@@ -3,18 +3,18 @@
 **/
 /* */
 enum ElementType{
-    CONTROLLER
-    CLOUD
-    CLIENT
-    LOGGER
-    SINK
+    CONTROLLER = 1
+    CLOUD = 2
+    CLIENT = 3
+    LOGGER = 4
+    SINK = 5
 }
 
 enum ElementState{
-    WAITING
-    RUNNING
-    RESET
-    STOP
+    WAITING = 11
+    RUNNING = 12
+    RESET = 13
+    STOP = 14
 }
 
 enum ModelState{
@@ -28,6 +28,7 @@ struct ElementConfiguration{
     2:optional string ip;
     3:optional i32 port;
     4:optional string id;
+    5:optional ElementState state;
 }
 
 struct ModelConfiguration{
@@ -36,11 +37,10 @@ struct ModelConfiguration{
 }
 
 struct Test{
-    1:bool test;
-    2:i32 repetition;
-    3:optional i32 number_of_images;
-    4:optional i16 edge_batch_size;
-    5:optional i16 cloud_batch_size;
+    1:bool is_test;
+    2:optional i32 number_of_images;
+    3:optional i16 edge_batch_size;
+    4:optional i16 cloud_batch_size;
 }
 
 struct Configuration{
@@ -67,6 +67,15 @@ struct Message {
     4:string message;
 }
 
+struct PerformanceMessage {
+    1:double timestamp;
+    2:string id;
+    3:ElementType server_type;
+    4:i16 no_images_predicted;
+    5:string list_ids;
+    6:double elapsed_time;
+}
+
 service SinkInterface{
     void put_partial_result(1:Image result)
     Image get_remote_partial_result(1:i16 batch_dimension)
@@ -84,11 +93,13 @@ service ControllerInterface{
     ModelConfiguration instantiate_model(1:ModelConfiguration model_configuration)
     ModelState set_model_state(1:ModelState model_state)
     void set_test(1:Test test_configuration)
+    Test get_test()
     void reset()
     void stop()
 }
 
 service LogInterface{
     void log_message(1:Message log_message)
+    void log_performance_message(1:PerformanceMessage message)
 }
 

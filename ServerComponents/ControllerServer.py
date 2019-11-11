@@ -12,6 +12,7 @@ class ControllerInterfaceService:
         self.server_base_path = "./models/server/"
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
+        self.test = None
 
     # --------- MODEL HANDLING SECTION --------- #
 
@@ -132,4 +133,12 @@ class ControllerInterfaceService:
         configuration = self.element_table.get_complete_configuration()
         print(configuration)
         return Configuration(configuration)
+
+    # --------- TEST CONFIGURATION SECTION ------------- #
+
+    def set_test(self, test):
+        self.test = test
+
+    def get_test(self):
+        return self.test
 

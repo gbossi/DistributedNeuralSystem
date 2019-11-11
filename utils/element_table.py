@@ -27,7 +27,8 @@ class ElementTable:
             elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
                                                              ip=getattr(element, 'ip'),
                                                              port=getattr(element, 'port'),
-                                                             id=element.Index)]
+                                                             id=element.Index,
+                                                             state=getattr(element, 'state'))]
         return elements_configurations
 
     def get_element_state(self, element_id):

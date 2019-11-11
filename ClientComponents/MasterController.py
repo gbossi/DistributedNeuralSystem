@@ -58,10 +58,10 @@ class MasterController:
         command = subprocess.run(['lsb_release', '-a'], stdout=subprocess.PIPE)
         if command.returncode == 0:
             pass
-            # self.logger_interface.send_log_message(command.stdout.decode())
+            #self.logger_interface.send_log_message(command.stdout.decode())
         else:
             self.logger_interface.send_log_message("Unable to understand installed OS")
-
+        return
 
     def send_log(self, message: str):
         self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))
