@@ -5,6 +5,13 @@ import time
 IP_MASTER = "localhost"
 MASTER_PORT = 10100
 
+# cartelle
+#   -Hardware: NomeMacchina
+#       -Applicazione: CNN
+#           -Configurazione: rete // Dimensione dati // numero-campioni taglio
+#                  -Timestamp:
+#                       -Ripetizione:
+#                              Dump info relativo hardware
 
 if __name__ == '__main__':
     controller = ExternalController(element_type=ElementType.CONTROLLER, server_ip=IP_MASTER, port=MASTER_PORT)

@@ -23,6 +23,7 @@ class RemoteEdge:
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
         self.sink_client.connect_to_sink_service()
         self.keras_model = self.controller.download_model()
+        #log model specs
         input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
         self.test = self.controller.get_test()
         if self.test.is_test:

@@ -1,13 +1,17 @@
 import threading
 import time
+import math
+import tensorflow as tf
 
 from ClientComponents.InternalController import InternalController
 from ServerComponents.SinkServer import SinkInterfaceService
 from interfaces import SinkInterface
 from interfaces.ttypes import ElementType, ElementState
 from utils.thrift_servers import Server, ServerType
+from tf.keras.applications.imagenet_utils import decode_predictions
 
-BATCH_DIM = 8
+BATCH_SIZE = 8
+NO_IMAGES = 1000
 IP_SINK = "localhost"
 SINK_PORT = 20200
 IP_MASTER = "localhost"
@@ -28,7 +32,7 @@ class CloudThread(threading.Thread):
         self.server.stop()
 
 
-class CloudServer():
+class CloudServer:
     def __init__(self, sink: SinkInterfaceService):
         self.controller = InternalController(ElementType.CLOUD, server_ip=IP_MASTER, port=MASTER_PORT)
         self.controller.connect_to_configuration_server()
@@ -36,24 +40,26 @@ class CloudServer():
         self.sink = sink
         self.controller.register_controller(server_ip=IP_SINK, server_port=SINK_PORT)
         self.test = self.controller.get_test()
+        if self.test.is_test:
+            self.batch_size = self.test.edge_batch_size
+            self.no_images = self.test.number_of_images
+        else:
+            self.batch_size = BATCH_SIZE
+            self.no_images = NO_IMAGES
 
     def run(self):
         self.controller.set_state(ElementState.RUNNING)
-
+        remaining_batch = self.batch_size
         while self.controller.update_state() == ElementState.RUNNING:
-            if self.sink.queue.qsize() >= BATCH_DIM:
-                id_list, data_batch = self.sink.get_partial_result(BATCH_DIM)
+            if self.sink.queue.qsize() >= remaining_batch:
+                id_list, data_batch = self.sink.get_partial_result(self.batch_size)
                 start = time.time()
                 predicted = self.cloud_model.predict(data_batch)
                 end = time.time()
-                self.controller.send_log(str(end-start) + "\n" + str(id_list))
-            elif self.sink.queue.qsize() > 0:
-                id_list, data_batch = self.sink.get_partial_result(self.sink.queue.qsize())
-                start = time.time()
-                predicted = self.cloud_model.predict(data_batch)
-                end = time.time()
-                self.controller.send_log(str(end-start) + "\n" + str(id_list))
-            elif self.sink.queue.qsize() == 0:
+                self.controller.log_performance_message(self.batch_size, images_ids=id_list, elapsed_time=end-start)
+                remaining_batch = self.batch_size
+            else:
+                remaining_batch = int(math.ceil(remaining_batch/2))
                 time.sleep(3)
 
         if self.controller.current_state == ElementState.RESET:
@@ -64,6 +70,12 @@ class CloudServer():
             self.controller.send_log("Waiting a new model from master server")
             return 1
 
+    def decode_prediction_batch(self, predicted):
+        decoded = []
+        for i in range(len(predicted)):
+            decoded = decoded + [decode_predictions(predicted[i])]
+        return decoded
+
 
 if __name__ == '__main__':
     service = SinkInterfaceService()
@@ -72,6 +84,4 @@ if __name__ == '__main__':
     cloud_thread = CloudThread(sink=service, sink_server=server)
     cloud_thread.start()
     server.serve()
-
-
 

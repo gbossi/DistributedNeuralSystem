@@ -23,6 +23,11 @@ enum ModelState{
     DIRT
 }
 
+enum LogType{
+    MESSAGE
+    PERFORMANCE
+}
+
 struct ElementConfiguration{
     1:ElementType type;
     2:optional string ip;
@@ -74,6 +79,12 @@ struct PerformanceMessage {
     4:i16 no_images_predicted;
     5:string list_ids;
     6:double elapsed_time;
+    7:string decoded_ids;
+    8:list<i16> output_dimension;
+}
+
+exception FileNotFound{
+    1:string description
 }
 
 service SinkInterface{
@@ -101,5 +112,7 @@ service ControllerInterface{
 service LogInterface{
     void log_message(1:Message log_message)
     void log_performance_message(1:PerformanceMessage message)
+    FileChunk get_log_chunk(1:LogType log_type, 2:i64 offset, 3:i32 size) throws (1:FileNotFound message)
 }
+
 

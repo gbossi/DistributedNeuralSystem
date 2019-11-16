@@ -70,10 +70,39 @@ class InternalController(MasterController):
         return tf.keras.models.load_model(filename)
 
     def log_performance_message(self, no_images_predicted: int, images_ids: str, elapsed_time: float):
+        self.__log_performance__(no_images_predicted=no_images_predicted,
+                                 images_ids=images_ids,
+                                 elapsed_time=elapsed_time)
+
+    def log_performance_message_and_shape(self, no_images_predicted: int, images_ids: str, elapsed_time: float, shape):
+        self.__log_performance__(no_images_predicted=no_images_predicted,
+                                 images_ids=images_ids,
+                                 elapsed_time=elapsed_time,
+                                 output_dimension = shape)
+
+    def log_performance_message_and_result(self, no_images_predicted: int, images_ids: str, elapsed_time: float, predicted: str):
+        self.__log_performance__(no_images_predicted=no_images_predicted,
+                                 images_ids=images_ids,
+                                 elapsed_time=elapsed_time,
+                                 predicted=predicted)
+
+    def __log_performance__(self, no_images_predicted: int,
+                            images_ids: str,
+                            elapsed_time: float,
+                            predicted=None,
+                            output_dimension=None):
+
+        if output_dimension is None:
+            output_dimension = [1, 1]
+        if predicted is None:
+            predicted = "Nan"
+
         self.logger_interface.log_performance_message(
-            PerformanceMessage(time.time(),
-                               self.element_id,
-                               self.element_type,
-                               no_images_predicted,
-                               str(images_ids),
-                               elapsed_time))
+            PerformanceMessage(timestamp=time.time(),
+                               id=self.element_id,
+                               server_type=self.element_type,
+                               no_images_predicted=no_images_predicted,
+                               list_ids=str(images_ids),
+                               elapsed_time=elapsed_time,
+                               decoded_ids=predicted,
+                               output_dimension=output_dimension))
