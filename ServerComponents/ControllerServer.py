@@ -12,6 +12,8 @@ class ControllerInterfaceService:
         self.server_base_path = "./models/server/"
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
+        self.testing_components = 0
+        self.test_completed = False
         self.test = None
 
     # --------- MODEL HANDLING SECTION --------- #
@@ -95,6 +97,7 @@ class ControllerInterfaceService:
             self.element_table.insert(element_id, local_config.type)
         elif local_config.type is ElementType.CONTROLLER:
             self.element_table.insert(element_id, local_config.type, element_state=ElementState.RUNNING)
+
         return element_id
 
     def trigger_state(self, element_id):
@@ -130,15 +133,26 @@ class ControllerInterfaceService:
         return Configuration(self.element_table.get_servers_configuration())
 
     def get_complete_configuration(self):
-        configuration = self.element_table.get_complete_configuration()
-        print(configuration)
-        return Configuration(configuration)
+        return Configuration(self.element_table.get_complete_configuration())
 
     # --------- TEST CONFIGURATION SECTION ------------- #
 
     def set_test(self, test):
+        self.test_completed = False
         self.test = test
 
-    def get_test(self):
+    def get_test(self, element_type: ElementType):
+        if element_type is ElementType.CLIENT:
+            self.testing_components += 1
         return self.test
+
+    def test_completed(self):
+        self.testing_components -= 1
+        if self.testing_components == 0:
+            self.test_completed = True
+
+    def is_test_over(self):
+        return self.test_completed
+
+
 

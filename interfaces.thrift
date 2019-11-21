@@ -26,6 +26,7 @@ enum ModelState{
 enum LogType{
     MESSAGE
     PERFORMANCE
+    SPECS
 }
 
 struct ElementConfiguration{
@@ -68,19 +69,27 @@ struct FileChunk {
 struct Message {
     1:double timestamp;
     2:string id;
-    3:ElementType server_type;
+    3:ElementType element_type;
     4:string message;
 }
 
 struct PerformanceMessage {
     1:double timestamp;
     2:string id;
-    3:ElementType server_type;
+    3:ElementType element_type;
     4:i16 no_images_predicted;
     5:string list_ids;
     6:double elapsed_time;
     7:string decoded_ids;
     8:list<i16> output_dimension;
+}
+
+struct SpecsMessage{
+    1:double timestamp;
+    2:string id;
+    3:ElementType element_type;
+    4:string spec;
+    5:string value;
 }
 
 exception FileNotFound{
@@ -104,7 +113,9 @@ service ControllerInterface{
     ModelConfiguration instantiate_model(1:ModelConfiguration model_configuration)
     ModelState set_model_state(1:ModelState model_state)
     void set_test(1:Test test_configuration)
-    Test get_test()
+    Test get_test(1:ElementType element_type)
+    void test_completed()
+    bool is_test_over()
     void reset()
     void stop()
 }
@@ -112,6 +123,7 @@ service ControllerInterface{
 service LogInterface{
     void log_message(1:Message log_message)
     void log_performance_message(1:PerformanceMessage message)
+    void log_specs_message(1:SpecsMessage message)
     FileChunk get_log_chunk(1:LogType log_type, 2:i64 offset, 3:i32 size) throws (1:FileNotFound message)
 }
 

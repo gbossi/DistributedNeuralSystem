@@ -15,15 +15,15 @@ NO_IMAGES = 1000
 
 class RemoteEdge:
     def __init__(self,  server_ip=IP_MASTER, port=MASTER_PORT):
-        self.controller = InternalController(ElementType.CLIENT, server_ip=server_ip, port=port)
-        self.controller.connect_to_configuration_server()
-        self.controller.register_controller()
+        self.controller = InternalController(server_ip=server_ip, port=port)
+        self.controller.register_element(ElementType.CLIENT)
+        self.keras_model = self.controller.download_model()
+
         self.remote_configurations = self.controller.get_servers_configuration().elements_configuration
         cloud_server = self.get_server_from_configuration(ElementType.CLOUD)
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
         self.sink_client.connect_to_sink_service()
-        self.keras_model = self.controller.download_model()
-        #log model specs
+
         input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
         self.test = self.controller.get_test()
         if self.test.is_test:
@@ -51,7 +51,7 @@ class RemoteEdge:
             self.controller.log_performance_message(self.batch_size, images_ids=filenames, elapsed_time=end-start)
             images_read += self.batch_size
             if images_read >= self.no_images:
-                #something like test completed like ready state
+                self.controller.test_completed()
                 self.controller.set_state(ElementState.RESET)
 
         if self.controller.current_state == ElementState.RESET:

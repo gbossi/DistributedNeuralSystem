@@ -1,14 +1,13 @@
 import threading
 import time
 import math
-import tensorflow as tf
 
 from ClientComponents.InternalController import InternalController
 from ServerComponents.SinkServer import SinkInterfaceService
 from interfaces import SinkInterface
 from interfaces.ttypes import ElementType, ElementState
 from utils.thrift_servers import Server, ServerType
-from tf.keras.applications.imagenet_utils import decode_predictions
+from tensorflow.keras.applications.imagenet_utils import decode_predictions
 
 BATCH_SIZE = 8
 NO_IMAGES = 1000
@@ -34,11 +33,10 @@ class CloudThread(threading.Thread):
 
 class CloudServer:
     def __init__(self, sink: SinkInterfaceService):
-        self.controller = InternalController(ElementType.CLOUD, server_ip=IP_MASTER, port=MASTER_PORT)
-        self.controller.connect_to_configuration_server()
+        self.controller = InternalController(server_ip=IP_MASTER, port=MASTER_PORT)
+        self.controller.register_element(ElementType.CLOUD, server_ip=IP_SINK, server_port=SINK_PORT)
         self.cloud_model = self.controller.download_model()
         self.sink = sink
-        self.controller.register_controller(server_ip=IP_SINK, server_port=SINK_PORT)
         self.test = self.controller.get_test()
         if self.test.is_test:
             self.batch_size = self.test.edge_batch_size

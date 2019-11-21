@@ -7,8 +7,8 @@ WAITING_TIME = 5
 
 
 class InternalController(MasterController):
-    def __init__(self, element_type: ElementType, server_ip='localhost', port=10100):
-        super(InternalController, self).__init__(element_type, server_ip, port)
+    def __init__(self, server_ip='localhost', port=10100):
+        super(InternalController, self).__init__(server_ip, port)
         self.last_update = 0
 
     def get_servers_configuration(self):
@@ -28,7 +28,6 @@ class InternalController(MasterController):
         """
         current_update = time.time()
         if current_update-self.last_update > 5:
-            print("updating state")
             self.last_update = current_update
             self.current_state = self.controller_interface.get_state(self.element_id)
         return self.current_state
@@ -42,7 +41,10 @@ class InternalController(MasterController):
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
 
     def get_test(self):
-        return self.controller_interface.get_test()
+        return self.controller_interface.get_test(self.element_type)
+
+    def test_completed(self):
+        self.controller_interface.test_completed()
 
     def download_model(self):
         while not self.controller_interface.is_model_available():
@@ -78,7 +80,7 @@ class InternalController(MasterController):
         self.__log_performance__(no_images_predicted=no_images_predicted,
                                  images_ids=images_ids,
                                  elapsed_time=elapsed_time,
-                                 output_dimension = shape)
+                                 output_dimension=shape)
 
     def log_performance_message_and_result(self, no_images_predicted: int, images_ids: str, elapsed_time: float, predicted: str):
         self.__log_performance__(no_images_predicted=no_images_predicted,
@@ -106,3 +108,6 @@ class InternalController(MasterController):
                                elapsed_time=elapsed_time,
                                decoded_ids=predicted,
                                output_dimension=output_dimension))
+
+
+
