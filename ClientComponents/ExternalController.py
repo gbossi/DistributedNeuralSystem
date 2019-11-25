@@ -22,9 +22,6 @@ class ExternalController(MasterController):
         self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
                                                 edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
-    def is_test_over(self):
-        return self.controller_interface.is_test_over()
-
     def stop(self):
         self.controller_interface.stop()
 
@@ -32,6 +29,8 @@ class ExternalController(MasterController):
         self.controller_interface.reset()
 
     def download_log(self, log_type: LogType, saving_folder: str):
+        self.logger_interface.prepare_log(log_type=log_type)
+
         batch_dimension = 100000  # 100 KB
         current_position = 0
         remaining = 1
@@ -42,7 +41,6 @@ class ExternalController(MasterController):
                     }[log_type]
 
         filename = saving_folder + filename
-
         writer = open(filename, "wb")
 
         while remaining:

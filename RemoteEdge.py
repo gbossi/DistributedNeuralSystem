@@ -52,7 +52,11 @@ class RemoteEdge:
             images_read += self.batch_size
             if images_read >= self.no_images:
                 self.controller.test_completed()
-                self.controller.set_state(ElementState.RESET)
+                self.controller.set_state(ElementState.WAITING)
+
+        if self.controller.current_state == ElementState.WAITING:
+            self.controller.wait_next_action()
+
 
         if self.controller.current_state == ElementState.RESET:
             self.controller.send_log("Disconnecting from all other server")

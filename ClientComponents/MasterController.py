@@ -71,5 +71,8 @@ class MasterController:
                                                                          self.element_type, str(line[0]),
                                                                          str(' '.join(line[1:]))))
 
+    def is_test_over(self):
+        return self.controller_interface.is_test_over()
+
     def send_log(self, message: str):
         self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))

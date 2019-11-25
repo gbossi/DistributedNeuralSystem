@@ -11,6 +11,11 @@ class InternalController(MasterController):
         super(InternalController, self).__init__(server_ip, port)
         self.last_update = 0
 
+    def wait_next_action(self):
+        while self.current_state == ElementState.WAITING:
+            time.sleep(WAITING_TIME)
+            self.update_state()
+
     def get_servers_configuration(self):
         """
         Wait until all the other server components are available, then it gets a server configuration
@@ -39,6 +44,7 @@ class InternalController(MasterController):
         :return:
         """
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
+        return
 
     def get_test(self):
         return self.controller_interface.get_test(self.element_type)
@@ -102,7 +108,7 @@ class InternalController(MasterController):
         self.logger_interface.log_performance_message(
             PerformanceMessage(timestamp=time.time(),
                                id=self.element_id,
-                               server_type=self.element_type,
+                               element_type=self.element_type,
                                no_images_predicted=no_images_predicted,
                                list_ids=str(images_ids),
                                elapsed_time=elapsed_time,

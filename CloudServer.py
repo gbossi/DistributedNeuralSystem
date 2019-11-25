@@ -48,6 +48,7 @@ class CloudServer:
     def run(self):
         self.controller.set_state(ElementState.RUNNING)
         remaining_batch = self.batch_size
+        test_started = False
         while self.controller.update_state() == ElementState.RUNNING:
             if self.sink.queue.qsize() >= remaining_batch:
                 id_list, data_batch = self.sink.get_partial_result(self.batch_size)
@@ -56,16 +57,24 @@ class CloudServer:
                 end = time.time()
                 self.controller.log_performance_message(self.batch_size, images_ids=id_list, elapsed_time=end-start)
                 remaining_batch = self.batch_size
+                test_started = True
             else:
-                remaining_batch = int(math.ceil(remaining_batch/2))
                 time.sleep(3)
+                current_size = self.sink.queue.qsize()
+                remaining_batch = current_size if current_size > 0 else self.batch_size
+                if self.sink.queue.empty() and test_started:
+                    self.controller.test_completed()
+                    self.controller.set_state(ElementState.WAITING)
+
+        if self.controller.current_state == ElementState.WAITING:
+            self.controller.wait_next_action()
 
         if self.controller.current_state == ElementState.RESET:
             self.controller.send_log("Waiting a new model from master server")
             return 0
 
         if self.controller.current_state == ElementState.STOP:
-            self.controller.send_log("Waiting a new model from master server")
+            self.controller.send_log("Server stopped working")
             return 1
 
     def decode_prediction_batch(self, predicted):

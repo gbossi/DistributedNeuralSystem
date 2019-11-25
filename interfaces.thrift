@@ -24,9 +24,9 @@ enum ModelState{
 }
 
 enum LogType{
-    MESSAGE
-    PERFORMANCE
-    SPECS
+    MESSAGE = 0
+    PERFORMANCE = 1
+    SPECS = 2
 }
 
 struct ElementConfiguration{
@@ -124,6 +124,7 @@ service LogInterface{
     void log_message(1:Message log_message)
     void log_performance_message(1:PerformanceMessage message)
     void log_specs_message(1:SpecsMessage message)
+    void prepare_log(1:LogType log_type)
     FileChunk get_log_chunk(1:LogType log_type, 2:i64 offset, 3:i32 size) throws (1:FileNotFound message)
 }
 

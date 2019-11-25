@@ -1,7 +1,7 @@
 from utils.model_factory import ModelFactory
 from utils.surgeon import Surgeon
 from utils.element_table import ElementTable
-from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk
+from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
 from interfaces.ttypes import ModelState, ModelConfiguration
 import os, uuid
 
@@ -12,9 +12,7 @@ class ControllerInterfaceService:
         self.server_base_path = "./models/server/"
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
-        self.testing_components = 0
-        self.test_completed = False
-        self.test = None
+        self.test_settings = None
 
     # --------- MODEL HANDLING SECTION --------- #
 
@@ -137,22 +135,50 @@ class ControllerInterfaceService:
 
     # --------- TEST CONFIGURATION SECTION ------------- #
 
-    def set_test(self, test):
-        self.test_completed = False
-        self.test = test
+    def set_test(self, test_settings):
+        self.test_settings = TestSettings(test=test_settings)
 
     def get_test(self, element_type: ElementType):
-        if element_type is ElementType.CLIENT:
-            self.testing_components += 1
-        return self.test
+        if element_type in [ElementType.CLIENT, ElementType.CLOUD]:
+            self.test_settings.add_running()
+        return self.test_settings.get_test_specs()
 
     def test_completed(self):
-        self.testing_components -= 1
-        if self.testing_components == 0:
-            self.test_completed = True
+        self.test_settings.add_waiting()
+        test_end = self.test_settings.end_status()
+        if test_end is True:
+            self.model_state = ModelState.DIRT
+            self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
+            self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
+
 
     def is_test_over(self):
-        return self.test_completed
+        return self.test_settings.end_status()
 
+
+class TestSettings:
+    def __init__(self, test: Test):
+        self.values = test
+        self.started = False
+        self.completed = False
+        self.elements_running = 0
+        self.elements_waiting = 0
+
+    def get_test_specs(self):
+        return self.values
+
+    def add_running(self):
+        self.elements_running += 1
+        self.started = True
+
+    def add_waiting(self):
+        self.elements_waiting += 1
+
+    def end_status(self):
+        if self.started and self.elements_running == self.elements_waiting:
+            self.completed = True
+        else:
+            self.completed = False
+        return self.completed
 
 
