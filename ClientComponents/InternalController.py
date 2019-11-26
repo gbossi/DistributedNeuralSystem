@@ -22,8 +22,7 @@ class InternalController(MasterController):
         from the master server
         :return: a list of server configuration (type, ip, port)
         """
-        while self.current_state == ElementState.WAITING:
-            self.update_state()
+        self.wait_next_action()
         return self.controller_interface.get_servers_configuration()
 
     def update_state(self):

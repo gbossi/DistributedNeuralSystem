@@ -50,3 +50,6 @@ class ExternalController(MasterController):
             if batch_dimension < remaining:
                 batch_dimension = remaining
             writer.write(file_chunk.data)
+
+    def repeat_test(self):
+        self.controller_interface.repeat_test()

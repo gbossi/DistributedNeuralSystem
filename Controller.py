@@ -22,19 +22,21 @@ class Controller:
                      no_repetitions):
         self.setup_model(model_name=model_name, split_layer=split_layer)
         test_completed = 0
+        self.controller.set_test(True, number_of_images=no_images, edge_batch_size=edge_batch_size,
+                                 cloud_batch_size=cloud_batch_size)
         while test_completed < no_repetitions:
-            self.controller.set_test(True, number_of_images=no_images, edge_batch_size=edge_batch_size,
-                                     cloud_batch_size=cloud_batch_size)
             while not self.controller.is_test_over():
+                print(str(self.controller.get_complete_configuration()))
                 time.sleep(5)
-                test_completed += 1
 
+            test_completed += 1
             path = self.base_path+"/"+model_name+"/split_layer_"+str(split_layer)+"/cloud_batch_"+ \
                 str(cloud_batch_size)+"/edge_batch_size_"+str(edge_batch_size)+"/no_images_"+ \
-                str(no_images)+"/"+str(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))+"/"+str(test_completed+1)+"/"
+                str(no_images)+"/"+str(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))+"/"+str(test_completed)+"/"
             if not os.path.exists(path):
                 os.makedirs(path)
             self.download_all_logs(path)
+            self.controller.repeat_test()
 
     def download_all_logs(self, folder_path):
         self.controller.download_log(LogType.MESSAGE, folder_path)

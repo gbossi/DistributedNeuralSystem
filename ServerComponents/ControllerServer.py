@@ -1,9 +1,11 @@
-from utils.model_factory import ModelFactory
-from utils.surgeon import Surgeon
-from utils.element_table import ElementTable
+import os
+import uuid
+
 from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
 from interfaces.ttypes import ModelState, ModelConfiguration
-import os, uuid
+from utils.element_table import ElementTable
+from utils.model_factory import ModelFactory
+from utils.surgeon import Surgeon
 
 
 class ControllerInterfaceService:
@@ -115,13 +117,20 @@ class ControllerInterfaceService:
 
     # --------- SYSTEM STATE HANDLING SECTION --------- #
 
+    def run(self):
+        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+
+    def wait(self):
+        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.WAITING)
+        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.WAITING)
+
     def stop(self):
-        self.set_model_state(ModelState.DIRT)
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.STOP)
         self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.STOP)
 
     def reset(self):
-        self.set_model_state(ModelState.DIRT)
+        self.test_settings = None
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
         self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
 
@@ -135,8 +144,14 @@ class ControllerInterfaceService:
 
     # --------- TEST CONFIGURATION SECTION ------------- #
 
-    def set_test(self, test_settings):
-        self.test_settings = TestSettings(test=test_settings)
+    def set_test(self, settings):
+        if self.test_settings is not None:
+            self.reset()
+        self.test_settings = TestSettings(test=settings)
+
+    def repeat_test(self):
+        self.test_settings.reset_test()
+        self.run()
 
     def get_test(self, element_type: ElementType):
         if element_type in [ElementType.CLIENT, ElementType.CLOUD]:
@@ -145,12 +160,6 @@ class ControllerInterfaceService:
 
     def test_completed(self):
         self.test_settings.add_waiting()
-        test_end = self.test_settings.end_status()
-        if test_end is True:
-            self.model_state = ModelState.DIRT
-            self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
-            self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
-
 
     def is_test_over(self):
         return self.test_settings.end_status()
@@ -180,5 +189,11 @@ class TestSettings:
         else:
             self.completed = False
         return self.completed
+
+    def reset_test(self):
+        self.started = False
+        self.completed = False
+        self.elements_running = 0
+        self.elements_waiting = 0
 
 

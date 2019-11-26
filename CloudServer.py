@@ -25,9 +25,13 @@ class CloudThread(threading.Thread):
 
     def run(self):
         result = 0
-        while result == 0:
-            cloud = CloudServer(sink=self.sink)
+        cloud = CloudServer(sink=self.sink)
+
+        while result != 1:
             result = cloud.run()
+            if result == 0:
+                cloud = CloudServer(sink=self.sink)
+
         self.server.stop()
 
 
@@ -47,6 +51,7 @@ class CloudServer:
 
     def run(self):
         self.controller.set_state(ElementState.RUNNING)
+        self.controller.send_log("Start processing images in queue")
         remaining_batch = self.batch_size
         test_started = False
         while self.controller.update_state() == ElementState.RUNNING:
@@ -68,6 +73,10 @@ class CloudServer:
 
         if self.controller.current_state == ElementState.WAITING:
             self.controller.wait_next_action()
+
+        if self.controller.current_state == ElementState.RUNNING:
+            self.controller.send_log("Starting a new test with same configuration")
+            return -1
 
         if self.controller.current_state == ElementState.RESET:
             self.controller.send_log("Waiting a new model from master server")

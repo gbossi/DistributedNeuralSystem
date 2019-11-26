@@ -48,7 +48,8 @@ class RemoteEdge:
             predicted = self.keras_model.predict(data_batch)
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
-            self.controller.log_performance_message(self.batch_size, images_ids=filenames, elapsed_time=end-start)
+            self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
+                                                              elapsed_time=end-start, shape=predicted.shape)
             images_read += self.batch_size
             if images_read >= self.no_images:
                 self.controller.test_completed()
@@ -57,6 +58,9 @@ class RemoteEdge:
         if self.controller.current_state == ElementState.WAITING:
             self.controller.wait_next_action()
 
+        if self.controller.update_state() == ElementState.RUNNING:
+            self.controller.send_log("Starting a new test with same configuration")
+            return -1
 
         if self.controller.current_state == ElementState.RESET:
             self.controller.send_log("Disconnecting from all other server")
@@ -67,6 +71,9 @@ class RemoteEdge:
         if self.controller.current_state == ElementState.STOP:
             self.controller.send_log("Shutting down the mobile device")
             return 1
+
+    def repeat_test(self):
+        pass
 
 
 class DataGenerator(DirectoryIterator):
@@ -100,6 +107,8 @@ if __name__ == '__main__':
     client = RemoteEdge(server_ip=master_ip, port=master_port)
     '''
     result = 0
-    while result == 0:
-        client = RemoteEdge()
+    client = RemoteEdge()
+    while result != 1:
         result = client.run()
+        if result == 0:
+            client = RemoteEdge()

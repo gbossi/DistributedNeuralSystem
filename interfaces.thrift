@@ -116,6 +116,7 @@ service ControllerInterface{
     Test get_test(1:ElementType element_type)
     void test_completed()
     bool is_test_over()
+    void repeat_test()
     void reset()
     void stop()
 }
