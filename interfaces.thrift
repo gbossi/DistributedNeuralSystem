@@ -15,6 +15,7 @@ enum ElementState{
     RUNNING = 12
     RESET = 13
     STOP = 14
+    READY = 15
 }
 
 enum ModelState{
@@ -110,13 +111,14 @@ service ControllerInterface{
     FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
     bool is_model_available()
+    bool is_cloud_available()
     ModelConfiguration instantiate_model(1:ModelConfiguration model_configuration)
     ModelState set_model_state(1:ModelState model_state)
     void set_test(1:Test test_configuration)
     Test get_test(1:ElementType element_type)
     void test_completed()
     bool is_test_over()
-    void repeat_test()
+    void run()
     void reset()
     void stop()
 }

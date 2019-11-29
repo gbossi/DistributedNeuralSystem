@@ -22,6 +22,9 @@ class ExternalController(MasterController):
         self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
                                                 edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
+    def run(self):
+        self.controller_interface.run()
+
     def stop(self):
         self.controller_interface.stop()
 
@@ -51,5 +54,3 @@ class ExternalController(MasterController):
                 batch_dimension = remaining
             writer.write(file_chunk.data)
 
-    def repeat_test(self):
-        self.controller_interface.repeat_test()

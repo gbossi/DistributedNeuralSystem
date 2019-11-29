@@ -42,11 +42,12 @@ class ControllerInterfaceService:
         self.server_model_path = self.server_base_path+server_model.name+".h5"
         server_model.save(self.server_model_path)
 
-        self.model_state = ModelState.AVAILABLE
-
         return model_configuration
 
     def set_model_state(self, model_state: ModelState):
+        if model_state is ModelState.DIRT:
+            #todo delete old model
+            pass
         self.model_state = model_state
         return model_state
 
@@ -100,16 +101,11 @@ class ControllerInterfaceService:
 
         return element_id
 
-    def trigger_state(self, element_id):
-        if self.model_state is ModelState.AVAILABLE:
-            if self.element_table.get_element_type(element_id) in [ElementType.CLIENT, ElementType.CLOUD]:
-                if self.element_table.exist_type_in_state(ElementType.CLIENT, ElementState.WAITING):
-                    if self.element_table.exist_type_in_state(ElementType.CLOUD, ElementState.RUNNING):
-                        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
-
     def get_state(self, element_id):
-        self.trigger_state(element_id)
         return self.element_table.get_element_state(element_id)
+
+    def is_cloud_available(self):
+        return self.element_table.exist_type(ElementType.CLOUD)
 
     def set_state(self, element_id: str, state: ElementState):
         self.element_table.set_element_state(element_id, state)
@@ -119,7 +115,7 @@ class ControllerInterfaceService:
 
     def run(self):
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
-        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
+        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RUNNING)
 
     def wait(self):
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.WAITING)
@@ -130,6 +126,8 @@ class ControllerInterfaceService:
         self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.STOP)
 
     def reset(self):
+        self.model_state = ModelState.DIRT
+        self.element_table = ElementTable()
         self.test_settings = None
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
         self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
@@ -149,10 +147,6 @@ class ControllerInterfaceService:
             self.reset()
         self.test_settings = TestSettings(test=settings)
 
-    def repeat_test(self):
-        self.test_settings.reset_test()
-        self.run()
-
     def get_test(self, element_type: ElementType):
         if element_type in [ElementType.CLIENT, ElementType.CLOUD]:
             self.test_settings.add_running()
@@ -169,7 +163,6 @@ class TestSettings:
     def __init__(self, test: Test):
         self.values = test
         self.started = False
-        self.completed = False
         self.elements_running = 0
         self.elements_waiting = 0
 
@@ -185,14 +178,13 @@ class TestSettings:
 
     def end_status(self):
         if self.started and self.elements_running == self.elements_waiting:
-            self.completed = True
+            self.elements_running = self.elements_running * 2
+            return True
         else:
-            self.completed = False
-        return self.completed
+            return False
 
     def reset_test(self):
         self.started = False
-        self.completed = False
         self.elements_running = 0
         self.elements_waiting = 0
 

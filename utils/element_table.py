@@ -32,13 +32,15 @@ class ElementTable:
         return elements_configurations
 
     def get_element_state(self, element_id):
-        return self.elements_table.loc[[element_id], ['state']].values[0].item()
+        return self.elements_table.at[element_id, 'state']
 
     def get_element_type(self, element_id):
-        return self.elements_table.loc[[element_id], ['type']].values[0].item()
+        return self.elements_table.at[element_id, 'type']
 
     def set_element_state(self, element_id, state):
+        print(str(self.elements_table.at[element_id, 'state']))
         self.elements_table.at[element_id, 'state'] = state
+        print(str(self.elements_table.at[element_id, 'state']))
         return self.get_element_state(element_id)
 
     def exist_type_in_state(self, element_type: ElementType, element_state: ElementState):
@@ -46,6 +48,9 @@ class ElementTable:
             return True
         else:
             return False
+
+    def exist_type(self, element_type: ElementType):
+        return (self.elements_table['type'] == element_type).any()
 
     def update_state_by_type(self, element_type: ElementType, state: ElementState):
         self.elements_table.loc[self.elements_table['type'] == element_type, 'state'] = state

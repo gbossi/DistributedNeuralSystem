@@ -11,8 +11,8 @@ class InternalController(MasterController):
         super(InternalController, self).__init__(server_ip, port)
         self.last_update = 0
 
-    def wait_next_action(self):
-        while self.current_state == ElementState.WAITING:
+    def wait_in_ready_state(self):
+        while self.current_state == ElementState.READY:
             time.sleep(WAITING_TIME)
             self.update_state()
 
@@ -22,7 +22,8 @@ class InternalController(MasterController):
         from the master server
         :return: a list of server configuration (type, ip, port)
         """
-        self.wait_next_action()
+        while not self.controller_interface.is_cloud_available():
+            time.sleep(WAITING_TIME)
         return self.controller_interface.get_servers_configuration()
 
     def update_state(self):
@@ -43,9 +44,10 @@ class InternalController(MasterController):
         :return:
         """
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
-        return
 
     def get_test(self):
+        self.set_state(ElementState.READY)
+        self.wait_in_ready_state()
         return self.controller_interface.get_test(self.element_type)
 
     def test_completed(self):

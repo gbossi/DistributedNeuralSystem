@@ -1,7 +1,7 @@
 from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
 from thrift.transport import TSocket, TTransport
 from interfaces import ControllerInterface, LogInterface
-from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message, SpecsMessage
+from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message, SpecsMessage, Configuration
 import time
 import subprocess
 
@@ -25,6 +25,14 @@ class MasterController:
 
     def disconnect_to_configuration_server(self):
         self.transport.close()
+
+    @staticmethod
+    def get_element_type_from_configuration(remote_configuration: Configuration, type: ElementType):
+        elements = []
+        for element in remote_configuration.elements_configuration:
+            if type == element.type:
+                elements = elements + [element]
+        return elements
 
     def register_element(self, element_type: ElementType, server_ip="localhost", server_port=0):
         """
@@ -75,4 +83,5 @@ class MasterController:
         return self.controller_interface.is_test_over()
 
     def send_log(self, message: str):
+        print(message)
         self.logger_interface.log_message(Message(time.time(), self.element_id, self.element_type, message))

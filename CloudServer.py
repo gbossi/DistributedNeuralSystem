@@ -24,14 +24,12 @@ class CloudThread(threading.Thread):
         self.sink = sink
 
     def run(self):
-        result = 0
+        result = ElementState.RUNNING
         cloud = CloudServer(sink=self.sink)
-
-        while result != 1:
+        while result != ElementState.STOP:
             result = cloud.run()
-            if result == 0:
+            if result == ElementState.RESET:
                 cloud = CloudServer(sink=self.sink)
-
         self.server.stop()
 
 
@@ -41,6 +39,7 @@ class CloudServer:
         self.controller.register_element(ElementType.CLOUD, server_ip=IP_SINK, server_port=SINK_PORT)
         self.cloud_model = self.controller.download_model()
         self.sink = sink
+
         self.test = self.controller.get_test()
         if self.test.is_test:
             self.batch_size = self.test.edge_batch_size
@@ -50,7 +49,27 @@ class CloudServer:
             self.no_images = NO_IMAGES
 
     def run(self):
-        self.controller.set_state(ElementState.RUNNING)
+
+        if self.test.is_test:
+            self.run_test()
+        else:
+            self.run_cloud()
+
+        if self.controller.current_state == ElementState.READY:
+            self.controller.wait_in_ready_state()
+
+        if self.controller.current_state == ElementState.RUNNING:
+            self.controller.send_log("Starting a new test with same configuration")
+
+        if self.controller.current_state == ElementState.RESET:
+            self.controller.send_log("Waiting a new model from master server")
+
+        if self.controller.current_state == ElementState.STOP:
+            self.controller.send_log("Server stopped working")
+
+        return self.controller.current_state
+
+    def run_test(self):
         self.controller.send_log("Start processing images in queue")
         remaining_batch = self.batch_size
         test_started = False
@@ -69,22 +88,24 @@ class CloudServer:
                 remaining_batch = current_size if current_size > 0 else self.batch_size
                 if self.sink.queue.empty() and test_started:
                     self.controller.test_completed()
-                    self.controller.set_state(ElementState.WAITING)
+                    self.controller.set_state(ElementState.READY)
 
-        if self.controller.current_state == ElementState.WAITING:
-            self.controller.wait_next_action()
+    def run_cloud(self):
+        self.controller.send_log("Start processing images in queue")
+        remaining_batch = self.batch_size
 
-        if self.controller.current_state == ElementState.RUNNING:
-            self.controller.send_log("Starting a new test with same configuration")
-            return -1
-
-        if self.controller.current_state == ElementState.RESET:
-            self.controller.send_log("Waiting a new model from master server")
-            return 0
-
-        if self.controller.current_state == ElementState.STOP:
-            self.controller.send_log("Server stopped working")
-            return 1
+        while self.controller.update_state() == ElementState.RUNNING:
+            if self.sink.queue.qsize() >= remaining_batch:
+                id_list, data_batch = self.sink.get_partial_result(self.batch_size)
+                start = time.time()
+                predicted = self.cloud_model.predict(data_batch)
+                end = time.time()
+                self.controller.log_performance_message(self.batch_size, images_ids=id_list, elapsed_time=end-start)
+                remaining_batch = self.batch_size
+            else:
+                time.sleep(3)
+                current_size = self.sink.queue.qsize()
+                remaining_batch = current_size if current_size > 0 else self.batch_size
 
     def decode_prediction_batch(self, predicted):
         decoded = []
