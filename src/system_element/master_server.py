@@ -1,8 +1,10 @@
-from utils.thrift_servers import Server, ServerType
-from interfaces import ControllerInterface, LogInterface
-from ServerComponents.ControllerServer import ControllerInterfaceService
-from ServerComponents.LogServer import LogServerInterfaceService
+import sys
+from src.utils.thrift_servers import Server, ServerType
+from src.components.server_components.controller_server import ControllerInterfaceService
+from src.components.server_components.log_server import LogServerInterfaceService
 from thrift.TMultiplexedProcessor import TMultiplexedProcessor
+sys.path.append("gen-py")
+from interfaces import ControllerInterface, LogInterface
 
 
 if __name__ == '__main__':

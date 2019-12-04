@@ -1,17 +1,22 @@
-from ClientComponents.ExternalController import ExternalController
-from ttypes import ElementType, ModelState, LogType, ElementState
 import time
 import os
+import sys
+import pandas as pd
+from src.components.client_components.external_controller import ExternalController
+
+sys.path.append("gen-py")
+from ttypes import ElementType, ModelState, LogType, ElementState
 
 IP_MASTER = "localhost"
 MASTER_PORT = 10100
 WAITING_TIME = 5
 
+
 class Controller:
     def __init__(self):
         self.controller = ExternalController(server_ip=IP_MASTER, port=MASTER_PORT)
         self.controller.register_element(ElementType.CONTROLLER)
-        self.base_path = "./Computer/CNN"
+        self.base_path = "../../Computer/CNN"
 
     def start_system(self,
                      model_name,
@@ -60,14 +65,19 @@ class Controller:
             if not os.path.exists(path):
                 os.makedirs(path)
 
-            self.download_all_logs(path)
+            self.controller.download_log(LogType.MESSAGE, path)
+            filename = self.controller.download_log(LogType.PERFORMANCE, path)
+            self.complete_performance_csv(filename, model_name, split_layer, encoding=False)
+            self.controller.download_log(LogType.SPECS, path)
 
-    def download_all_logs(self, folder_path):
-        self.controller.download_log(LogType.MESSAGE, folder_path)
-        self.controller.download_log(LogType.PERFORMANCE, folder_path)
-        self.controller.download_log(LogType.SPECS, folder_path)
+    def complete_performance_csv(self, filename, model_name, split_layer, encoding):
+        df = pd.read_csv(filename)
+        df["model_name"] = model_name
+        df["split_layer"] = split_layer
+        df["encoding"] = encoding
+        df.to_csv(filename)
 
-    def setup_model(self, model_name="VGG16", split_layer=8):
+    def setup_model(self, model_name, split_layer):
         self.controller.instantiate_model(model_name=model_name, split_layer=split_layer)
         self.controller.set_model_state(ModelState.AVAILABLE)
 

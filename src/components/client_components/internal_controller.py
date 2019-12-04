@@ -1,6 +1,9 @@
-from .MasterController import MasterController
 import time
+import sys
+from src.components.client_components.master_controller import MasterController
 import tensorflow as tf
+
+sys.path.append("gen-py")
 from interfaces.ttypes import ElementState, ElementType, PerformanceMessage
 
 WAITING_TIME = 5

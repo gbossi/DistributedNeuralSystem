@@ -1,17 +1,20 @@
 import threading
 import time
-import math
+import sys
 
-from ClientComponents.InternalController import InternalController
-from ServerComponents.SinkServer import SinkInterfaceService
+from src.utils.thrift_servers import Server, ServerType
+from tensorflow.keras.applications.imagenet_utils import decode_predictions
+from src.components.client_components.internal_controller import InternalController
+from src.components.server_components.sink_server import SinkInterfaceService
+
+sys.path.append("gen-py")
 from interfaces import SinkInterface
 from interfaces.ttypes import ElementType, ElementState
-from utils.thrift_servers import Server, ServerType
-from tensorflow.keras.applications.imagenet_utils import decode_predictions
+
 
 BATCH_SIZE = 8
 NO_IMAGES = 1000
-IP_SINK = "localhost"
+IP_SINK = "localhost" #socket.gethostbyname(socket.gethostname())
 SINK_PORT = 20200
 IP_MASTER = "localhost"
 MASTER_PORT = 10100
@@ -29,7 +32,7 @@ class CloudThread(threading.Thread):
         while result != ElementState.STOP:
             result = cloud.run()
             if result == ElementState.RESET:
-                cloud = CloudServer(sink=self.sink)
+                cloud.reset_values()
         self.server.stop()
 
 
@@ -91,7 +94,7 @@ class CloudServer:
                     self.controller.set_state(ElementState.READY)
 
     def run_cloud(self):
-        self.controller.send_log("Start processing images in queue")
+        self.controller.send_log("Start processing images in queue until stop status")
         remaining_batch = self.batch_size
 
         while self.controller.update_state() == ElementState.RUNNING:
@@ -112,6 +115,11 @@ class CloudServer:
         for i in range(len(predicted)):
             decoded = decoded + [decode_predictions(predicted[i])]
         return decoded
+
+    def reset_values(self):
+        self.controller.set_state(ElementState.WAITING)
+        self.cloud_model = self.controller.download_model()
+        self.sink.reset_sink()
 
 
 if __name__ == '__main__':

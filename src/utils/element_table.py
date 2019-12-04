@@ -1,4 +1,7 @@
+import sys
 import pandas as pd
+
+sys.path.append("gen-py")
 from interfaces.ttypes import ElementConfiguration, ElementType, ElementState
 
 

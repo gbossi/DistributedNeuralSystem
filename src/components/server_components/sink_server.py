@@ -1,6 +1,10 @@
-from queue import Queue
-from interfaces.ttypes import Image
 import numpy as np
+import sys
+from queue import Queue
+
+sys.path.append("gen-py")
+from interfaces.ttypes import Image
+
 
 
 class SinkInterfaceService:
@@ -43,6 +47,8 @@ class SinkInterfaceService:
         elif self.data_shape == image_shape:
             return True
         else:
-            print("Input Error, Unhandled Image Dimension, skipping input")
+            print("Input Error, Unhandled Image Dimension "+str(self.data_shape)+"!="+str(image_shape)+" skipping input")
             return False
 
+    def reset_sink(self):
+        self.data_shape = None

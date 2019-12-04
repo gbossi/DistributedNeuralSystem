@@ -1,7 +1,11 @@
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
+import sys
+
+sys.path.append("gen-py")
 from interfaces import SinkInterface
 from interfaces.ttypes import Image
+
 
 class SinkClient:
     def __init__(self, ip_address="localhost", port=60600):

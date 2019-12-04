@@ -1,17 +1,21 @@
 import os
 import uuid
+import sys
+import shutil
+from src.utils.element_table import ElementTable
+from src.utils.model_factory import ModelFactory
+from src.utils.surgeon import Surgeon
+from pathlib import Path
 
+sys.path.append("gen-py")
 from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
 from interfaces.ttypes import ModelState, ModelConfiguration
-from utils.element_table import ElementTable
-from utils.model_factory import ModelFactory
-from utils.surgeon import Surgeon
 
 
 class ControllerInterfaceService:
     def __init__(self):
-        self.device_base_path = "./models/client/"
-        self.server_base_path = "./models/server/"
+        self.device_model_path = None
+        self.server_model_path = None
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
         self.test_settings = None
@@ -31,22 +35,31 @@ class ControllerInterfaceService:
             ModelFactory().get_new_model(model_configuration.model_name),
             model_configuration.split_layer)
 
-        if not os.path.exists(self.device_base_path):
-            os.mkdir(self.device_base_path)
-        elif not os.path.exists(self.server_base_path):
-            os.mkdir(self.server_base_path)
+        device_base_path = "./models/client/"
+        server_base_path = "./models/server/"
 
-        self.device_model_path = self.device_base_path+device_model.name+".h5"
+        if not os.path.exists(device_base_path):
+            os.makedirs(device_base_path)
+        else:
+            shutil.rmtree(device_base_path)
+        if not os.path.exists(server_base_path):
+            os.makedirs(server_base_path)
+        else:
+            shutil.rmtree(server_base_path)
+
+        self.device_model_path = device_base_path+device_model.name+".h5"
+        Path(self.device_model_path).touch()
         device_model.save(self.device_model_path)
 
-        self.server_model_path = self.server_base_path+server_model.name+".h5"
+        self.server_model_path = server_base_path+server_model.name+".h5"
+        Path(self.server_model_path).touch()
         server_model.save(self.server_model_path)
 
         return model_configuration
 
     def set_model_state(self, model_state: ModelState):
         if model_state is ModelState.DIRT:
-            #todo delete old model
+            # todo delete old model
             pass
         self.model_state = model_state
         return model_state
@@ -127,7 +140,6 @@ class ControllerInterfaceService:
 
     def reset(self):
         self.model_state = ModelState.DIRT
-        self.element_table = ElementTable()
         self.test_settings = None
         self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
         self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
@@ -187,5 +199,3 @@ class TestSettings:
         self.started = False
         self.elements_running = 0
         self.elements_waiting = 0
-
-

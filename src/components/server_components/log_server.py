@@ -1,9 +1,16 @@
-from ttypes import Message, PerformanceMessage, LogType, FileChunk, FileNotFound, SpecsMessage
 import time
 import os
-from utils.enums import get_thrift_enum_name
+import sys
+import shutil
 import pandas as pd
 import numpy as np
+from datetime import datetime
+from src.utils.enums import get_thrift_enum_name
+
+sys.path.append("gen-py")
+from ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
+
+
 
 
 class LogServerInterfaceService:
@@ -11,17 +18,21 @@ class LogServerInterfaceService:
         base_path = "./logs/"
         if not os.path.exists(base_path):
             os.makedirs(base_path)
-        self.message_table = pd.DataFrame(columns=['time', 'element_type', 'element_id', 'message'])
+        else:
+            shutil.rmtree(base_path)
+            
+        self.message_table = pd.DataFrame(columns=['timestamp', 'time', 'element_type', 'element_id', 'message'])
         self.message_file_path = base_path
-        self.performance_table = pd.DataFrame(columns=['time', 'element_type', 'element_id', 'no_images_predicted',
-                                                       'list_ids', 'elapsed_time',
+        self.performance_table = pd.DataFrame(columns=['timestamp', 'time', 'element_type', 'element_id',
+                                                       'no_images_predicted', 'list_ids', 'elapsed_time',
                                                        'decoded_ids', 'output_dimension'])
         self.performance_file_path = base_path
-        self.specs_table = pd.DataFrame(columns=['time', 'element_type','element_id'])
+        self.specs_table = pd.DataFrame(columns=['timestamp', 'time', 'element_type','element_id'])
         self.specs_file_path = base_path
 
     def log_message(self, message: Message):
-        new_row = pd.DataFrame([{'time': time.localtime(message.timestamp),
+        new_row = pd.DataFrame([{'timestamp': message.timestamp,
+                                 'time': str(datetime.fromtimestamp(message.timestamp)),
                                  'element_type': get_thrift_enum_name(message.element_type),
                                  'element_id': message.id,
                                  'message': message.message}])
@@ -29,7 +40,8 @@ class LogServerInterfaceService:
         self.message_table = self.message_table.append(new_row, sort=False, ignore_index=True)
 
     def log_performance_message(self, message: PerformanceMessage):
-        new_row = pd.DataFrame([{'time': time.localtime(message.timestamp),
+        new_row = pd.DataFrame([{'timestamp': message.timestamp,
+                                 'time': str(datetime.fromtimestamp(message.timestamp)),
                                  'element_type': get_thrift_enum_name(message.element_type),
                                  'element_id': message.id,
                                  'no_images_predicted': message.no_images_predicted,
@@ -44,7 +56,8 @@ class LogServerInterfaceService:
 
     def log_specs_message(self, message: SpecsMessage):
         if not (self.specs_table['element_id'] == message.id).any():
-            new_row = pd.DataFrame([{'time': time.localtime(message.timestamp),
+            new_row = pd.DataFrame([{'timestamp': message.timestamp,
+                                     'time': str(datetime.fromtimestamp(message.timestamp)),
                                      'element_type': get_thrift_enum_name(message.element_type),
                                      'element_id': message.id}])
             self.specs_table = self.specs_table.append(new_row, sort=False, ignore_index=True)
@@ -76,7 +89,6 @@ class LogServerInterfaceService:
             self.specs_file_path = "./logs/specs_log_"+\
                                    str(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))+".csv"
             self.specs_table.to_csv(self.specs_file_path, encoding='utf-8', index=False)
-            self.specs_table = pd.DataFrame()
             print("Writing Specs")
 
     def get_log_chunk(self, log_type: LogType, offset: int, size: int):

@@ -1,5 +1,8 @@
-from .MasterController import MasterController
-from interfaces.ttypes import ModelConfiguration, ModelState, ElementType, Test, LogType
+import sys
+from src.components.client_components.master_controller import MasterController
+
+sys.path.append("gen-py")
+from interfaces.ttypes import ModelConfiguration, ModelState, Test, LogType
 
 
 class ExternalController(MasterController):
@@ -54,3 +57,4 @@ class ExternalController(MasterController):
                 batch_dimension = remaining
             writer.write(file_chunk.data)
 
+        return filename

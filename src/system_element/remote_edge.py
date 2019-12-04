@@ -1,10 +1,16 @@
 import time
-import argparse
-from ClientComponents.SinkClient import SinkClient
-from ClientComponents.InternalController import InternalController
-from interfaces.ttypes import ElementType, ElementState, Configuration
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIterator
+import sys
 import numpy as np
+import zlib
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIterator
+from pathlib import Path
+from src.components.client_components.sink_client import SinkClient
+from src.components.client_components.internal_controller import InternalController
+
+sys.path.append("gen-py")
+from interfaces.ttypes import ElementType, ElementState
+
 
 IP_MASTER = "localhost"
 MASTER_PORT = 10100
@@ -32,9 +38,12 @@ class RemoteEdge:
             self.no_images = NO_IMAGES
 
     def run(self):
-        input_dimension = tuple(self.keras_model.layers[1].input_shape[1:3])
-        datagen = DataGenerator(IMAGES_SOURCE, ImageDataGenerator(), batch_size=self.batch_size,
-                                target_size=input_dimension, interpolation="nearest")
+        datagen = DataGenerator(IMAGES_SOURCE,
+                                ImageDataGenerator(),
+                                batch_size=self.batch_size,
+                                target_size=tuple(self.keras_model.layers[1].input_shape[1:3]),
+                                interpolation="nearest")
+
         if self.test.is_test:
             self.run_test(datagen)
         else:
@@ -47,8 +56,6 @@ class RemoteEdge:
             self.controller.send_log("Starting a new test with same configuration")
 
         if self.controller.current_state == ElementState.RESET:
-            self.controller.send_log("Disconnecting from all other server")
-            self.sink_client.disconnect_from_sink_service()
             self.controller.send_log("Waiting a new model from master server")
 
         if self.controller.current_state == ElementState.STOP:
@@ -62,12 +69,21 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = next(datagen)
+            filenames = self.clean_filenames(filenames)
             start = time.time()
             predicted = self.keras_model.predict(data_batch)
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
                                                               elapsed_time=end-start, shape=predicted.shape)
+            start = time.time()
+            predicted_compressed = zlib.compress(predicted, 1)
+            end = time.time()
+
+            print("Initial Dimension: ", str(len(predicted.tobytes())))
+            print("Final Dimension: ", str(len(predicted_compressed)))
+            print("Time to compress the "+str(len(filenames))+"-image batch: "+str(end-start))
+
             images_read += self.batch_size
             if images_read >= self.no_images:
                 self.controller.test_completed()
@@ -78,12 +94,35 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = next(datagen)
+            filenames = self.clean_filenames(filenames)
             start = time.time()
             predicted = self.keras_model.predict(data_batch)
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
                                                               elapsed_time=end-start, shape=predicted.shape)
+
+    def reset_values(self):
+        self.controller.set_state(ElementState.WAITING)
+        self.keras_model = self.controller.download_model()
+        cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
+                                                                           ElementType.CLOUD)[0]
+        self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
+        self.sink_client.connect_to_sink_service()
+
+        self.test = self.controller.get_test()
+        if self.test.is_test:
+            self.batch_size = self.test.edge_batch_size
+            self.no_images = self.test.number_of_images
+        else:
+            self.batch_size = BATCH_SIZE
+            self.no_images = NO_IMAGES
+
+    def clean_filenames(self, filenames):
+        clean_names = []
+        for file in filenames:
+            clean_names = clean_names + [self.controller.element_id + "-" + Path(file).name]
+        return clean_names
 
 
 class DataGenerator(DirectoryIterator):
@@ -121,4 +160,4 @@ if __name__ == '__main__':
     while result != ElementState.STOP:
         result = client.run()
         if result == ElementState.RESET:
-            client = RemoteEdge()
+            client.reset_values()
