@@ -1,34 +1,30 @@
 import threading
 import time
-import sys
 
 from src.utils.thrift_servers import Server, ServerType
 from tensorflow.keras.applications.imagenet_utils import decode_predictions
 from src.components.client_components.internal_controller import InternalController
 from src.components.server_components.sink_server import SinkInterfaceService
 
-sys.path.append("gen-py")
 from interfaces import SinkInterface
 from interfaces.ttypes import ElementType, ElementState
 
-
 BATCH_SIZE = 8
 NO_IMAGES = 1000
-IP_SINK = "localhost" #socket.gethostbyname(socket.gethostname())
 SINK_PORT = 20200
-IP_MASTER = "localhost"
-MASTER_PORT = 10100
 
 
 class CloudThread(threading.Thread):
-    def __init__(self, sink: SinkInterfaceService, sink_server: Server):
+    def __init__(self, master_ip, master_port, sink: SinkInterfaceService, sink_server: Server):
         super(CloudThread, self).__init__()
+        self.master_ip = master_ip
+        self.master_port = master_port
         self.server = sink_server
         self.sink = sink
 
     def run(self):
         result = ElementState.RUNNING
-        cloud = CloudServer(sink=self.sink)
+        cloud = CloudServer(self.master_ip, self.master_port, self.sink, self.server)
         while result != ElementState.STOP:
             result = cloud.run()
             if result == ElementState.RESET:
@@ -37,9 +33,9 @@ class CloudThread(threading.Thread):
 
 
 class CloudServer:
-    def __init__(self, sink: SinkInterfaceService):
-        self.controller = InternalController(server_ip=IP_MASTER, port=MASTER_PORT)
-        self.controller.register_element(ElementType.CLOUD, server_ip=IP_SINK, server_port=SINK_PORT)
+    def __init__(self, master_ip, master_port, sink: SinkInterfaceService, server):
+        self.controller = InternalController(server_ip=master_ip, port=master_port)
+        self.controller.register_element(ElementType.CLOUD, server_ip=server.ip, server_port=server.port)
         self.cloud_model = self.controller.download_model()
         self.sink = sink
 
@@ -113,7 +109,7 @@ class CloudServer:
     def decode_prediction_batch(self, predicted):
         decoded = []
         for i in range(len(predicted)):
-            decoded = decoded + [decode_predictions(predicted[i])]
+            decoded = decoded+[decode_predictions(predicted[i])]
         return decoded
 
     def reset_values(self):
@@ -122,11 +118,14 @@ class CloudServer:
         self.sink.reset_sink()
 
 
-if __name__ == '__main__':
+def cloud_server_main(master_ip, master_port, sink_port=SINK_PORT):
     service = SinkInterfaceService()
     processor = SinkInterface.Processor(service)
-    server = Server(ServerType.THREADED, processor, port=SINK_PORT)
-    cloud_thread = CloudThread(sink=service, sink_server=server)
+    server = Server(ServerType.THREADED, processor, port=sink_port)
+    cloud_thread = CloudThread(master_ip=master_ip, master_port=master_port, sink=service, sink_server=server)
     cloud_thread.start()
     server.serve()
 
+
+if __name__ == '__main__':
+    cloud_server_main('localhost', 10100, SINK_PORT)

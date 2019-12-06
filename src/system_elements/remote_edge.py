@@ -1,5 +1,4 @@
 import time
-import sys
 import numpy as np
 import zlib
 
@@ -7,20 +6,14 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator, DirectoryIt
 from pathlib import Path
 from src.components.client_components.sink_client import SinkClient
 from src.components.client_components.internal_controller import InternalController
-
-sys.path.append("gen-py")
 from interfaces.ttypes import ElementType, ElementState
 
-
-IP_MASTER = "localhost"
-MASTER_PORT = 10100
-IMAGES_SOURCE = './images_source/'
 BATCH_SIZE = 8
 NO_IMAGES = 1000
 
 
 class RemoteEdge:
-    def __init__(self, server_ip=IP_MASTER, port=MASTER_PORT):
+    def __init__(self, server_ip, port):
         self.controller = InternalController(server_ip=server_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
         self.keras_model = self.controller.download_model()
@@ -37,8 +30,8 @@ class RemoteEdge:
             self.batch_size = BATCH_SIZE
             self.no_images = NO_IMAGES
 
-    def run(self):
-        datagen = DataGenerator(IMAGES_SOURCE,
+    def run(self, images_source):
+        datagen = DataGenerator(images_source,
                                 ImageDataGenerator(),
                                 batch_size=self.batch_size,
                                 target_size=tuple(self.keras_model.layers[1].input_shape[1:3]),
@@ -136,28 +129,14 @@ class DataGenerator(DirectoryIterator):
                 self.filenames_np[index_array])
 
 
-if __name__ == '__main__':
-    '''
-    parser = argparse.ArgumentParser(description=welcome)
-    parser.add_argument('--master-ip', '-mip', required=True,
-                        help='define the ip of the master server i.e. 192.168.1.125"')
-    parser.add_argument('--master-port', '-mpo', required=True,
-                        help='define the port of the master server i.e. 10100"', type=int)
-    parser.add_argument('--images-source', '-is',
-                        help='folder containing the input images"')
-    parser.parse_args()
-
-    args = parser.parse_args()
-
-    master_ip = args.domain
-    master_port = args.ofile
-    images_source = args.lines
-
-    client = RemoteEdge(server_ip=master_ip, port=master_port)
-    '''
+def remote_edge_main(master_ip, master_port, images_source='./images_source/'):
     result = ElementState.RUNNING
-    client = RemoteEdge()
+    client = RemoteEdge(master_ip, master_port)
     while result != ElementState.STOP:
-        result = client.run()
+        result = client.run(images_source)
         if result == ElementState.RESET:
             client.reset_values()
+
+
+if __name__ == '__main__':
+    remote_edge_main("localhost", 10100)

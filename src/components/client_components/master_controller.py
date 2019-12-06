@@ -16,7 +16,7 @@ PORT_MASTER_SERVER = 10100
 
 
 class MasterController:
-    def __init__(self, server_ip='localhost', port=10100):
+    def __init__(self, server_ip, port):
         self.socket = TSocket.TSocket(server_ip, port)
         self.transport = TTransport.TBufferedTransport(self.socket)
         self.protocol = TBinaryProtocol.TBinaryProtocol(self.transport)
@@ -27,7 +27,21 @@ class MasterController:
         self.element_type = None
         self.element_id = None
         self.current_state = ElementState.WAITING
-        self.transport.open()
+        self.connect_to_master_server()
+
+    def connect_to_master_server(self):
+        num_retries = 5
+        for attempt_no in range(num_retries):
+            try:
+                self.transport.open()
+                return
+            except TTransport.TTransportException as error:
+                if attempt_no < (num_retries-1):
+                    print("Error: Master Server is not available \nFailed connection: " + str(attempt_no+1)
+                          + " out of " + str(num_retries) + " attempts")
+                    time.sleep(5)
+                else:
+                    raise error
 
     def disconnect_to_configuration_server(self):
         self.transport.close()

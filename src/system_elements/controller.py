@@ -5,16 +5,13 @@ import pandas as pd
 from src.components.client_components.external_controller import ExternalController
 
 sys.path.append("gen-py")
-from ttypes import ElementType, ModelState, LogType, ElementState
+from interfaces.ttypes import ElementType, ModelState, LogType, ElementState
 
-IP_MASTER = "localhost"
-MASTER_PORT = 10100
 WAITING_TIME = 5
 
-
 class Controller:
-    def __init__(self):
-        self.controller = ExternalController(server_ip=IP_MASTER, port=MASTER_PORT)
+    def __init__(self, master_ip, master_port):
+        self.controller = ExternalController(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CONTROLLER)
         self.base_path = "../../Computer/CNN"
 
@@ -103,11 +100,15 @@ class Controller:
             time.sleep(WAITING_TIME)
 
 
-if __name__ == '__main__':
-    controller = Controller()
+def controller_main(master_ip, master_port):
+    controller = Controller(master_ip, master_port)
     controller.perform_test("VGG19", split_layer=10, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
                             no_repetitions=2)
     controller.reset_system()
     controller.perform_test("VGG19", split_layer=12, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
                             no_repetitions=2)
     controller.stop_system()
+
+
+if __name__ == '__main__':
+    controller_main('localhost', 10100)

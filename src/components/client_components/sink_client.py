@@ -1,8 +1,7 @@
+import time
+
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
-import sys
-
-sys.path.append("gen-py")
 from interfaces import SinkInterface
 from interfaces.ttypes import Image
 
@@ -13,10 +12,19 @@ class SinkClient:
         self.transport = TTransport.TBufferedTransport(self.transport)
         self.protocol = TBinaryProtocol.TBinaryProtocol(self.transport)
         self.server_interface = SinkInterface.Client(self.protocol)
-        self._id_list = []
 
     def connect_to_sink_service(self):
-        self.transport.open()
+        num_retries = 5
+        for attempt_no in range(num_retries):
+            try:
+                self.transport.open()
+            except TTransport.TTransportException as error:
+                if attempt_no < (num_retries-1):
+                    print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
+                          +" out of "+str(num_retries)+" attempts")
+                    time.sleep(5)
+                else:
+                    raise error
 
     def disconnect_from_sink_service(self):
         self.transport.close()

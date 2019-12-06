@@ -8,7 +8,7 @@ from datetime import datetime
 from src.utils.enums import get_thrift_enum_name
 
 sys.path.append("gen-py")
-from ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
+from interfaces.ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
 
 
 

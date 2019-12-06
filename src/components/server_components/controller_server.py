@@ -2,7 +2,7 @@ import os
 import uuid
 import sys
 import shutil
-from src.utils.element_table import ElementTable
+import pandas as pd
 from src.utils.model_factory import ModelFactory
 from src.utils.surgeon import Surgeon
 from pathlib import Path
@@ -42,10 +42,12 @@ class ControllerInterfaceService:
             os.makedirs(device_base_path)
         else:
             shutil.rmtree(device_base_path)
+            os.makedirs(device_base_path)
         if not os.path.exists(server_base_path):
             os.makedirs(server_base_path)
         else:
             shutil.rmtree(server_base_path)
+            os.makedirs(server_base_path)
 
         self.device_model_path = device_base_path+device_model.name+".h5"
         Path(self.device_model_path).touch()
@@ -58,11 +60,8 @@ class ControllerInterfaceService:
         return model_configuration
 
     def set_model_state(self, model_state: ModelState):
-        if model_state is ModelState.DIRT:
-            # todo delete old model
-            pass
         self.model_state = model_state
-        return model_state
+        return self.model_state
 
     def is_model_available(self):
         if self.model_state != ModelState.AVAILABLE:
@@ -199,3 +198,57 @@ class TestSettings:
         self.started = False
         self.elements_running = 0
         self.elements_waiting = 0
+
+
+class ElementTable:
+    def __init__(self):
+        self.elements_table = pd.DataFrame()
+
+    def insert(self, element_id, element_type, element_ip='unavailable', element_port=0,
+               element_state=ElementState.WAITING):
+        new_row = pd.DataFrame([{'type': element_type, 'ip': element_ip,
+                                 'port': element_port, 'state': element_state}], index=[element_id])
+        self.elements_table = self.elements_table.append(new_row)
+
+    def get_servers_configuration(self):
+        filter_configuration = self.elements_table[self.elements_table['type'] != ElementType.CLIENT]
+        elements_configurations = []
+        for element in filter_configuration.itertuples(index=False):
+            elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
+                                                             ip=getattr(element, 'ip'),
+                                                             port=getattr(element, 'port'))]
+        return elements_configurations
+
+    def get_complete_configuration(self):
+        elements_configurations = []
+        for element in self.elements_table.itertuples():
+            elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
+                                                             ip=getattr(element, 'ip'),
+                                                             port=getattr(element, 'port'),
+                                                             id=element.Index,
+                                                             state=getattr(element, 'state'))]
+        return elements_configurations
+
+    def get_element_state(self, element_id):
+        return self.elements_table.at[element_id, 'state']
+
+    def get_element_type(self, element_id):
+        return self.elements_table.at[element_id, 'type']
+
+    def set_element_state(self, element_id, state):
+        print(str(self.elements_table.at[element_id, 'state']))
+        self.elements_table.at[element_id, 'state'] = state
+        print(str(self.elements_table.at[element_id, 'state']))
+        return self.get_element_state(element_id)
+
+    def exist_type_in_state(self, element_type: ElementType, element_state: ElementState):
+        if element_state in self.elements_table[self.elements_table['type'] == element_type].values:
+            return True
+        else:
+            return False
+
+    def exist_type(self, element_type: ElementType):
+        return (self.elements_table['type'] == element_type).any()
+
+    def update_state_by_type(self, element_type: ElementType, state: ElementState):
+        self.elements_table.loc[self.elements_table['type'] == element_type, 'state'] = state

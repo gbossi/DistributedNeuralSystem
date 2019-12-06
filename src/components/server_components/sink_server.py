@@ -1,10 +1,6 @@
 import numpy as np
-import sys
 from queue import Queue
-
-sys.path.append("gen-py")
 from interfaces.ttypes import Image
-
 
 
 class SinkInterfaceService:
