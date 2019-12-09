@@ -20,6 +20,7 @@ class LogServerInterfaceService:
             os.makedirs(base_path)
         else:
             shutil.rmtree(base_path)
+            os.makedirs(base_path)
             
         self.message_table = pd.DataFrame(columns=['timestamp', 'time', 'element_type', 'element_id', 'message'])
         self.message_file_path = base_path
@@ -52,8 +53,6 @@ class LogServerInterfaceService:
 
         self.performance_table = self.performance_table.append(new_row, sort=False, ignore_index=True)
 
-        print(self.performance_table)
-
     def log_specs_message(self, message: SpecsMessage):
         if not (self.specs_table['element_id'] == message.id).any():
             new_row = pd.DataFrame([{'timestamp': message.timestamp,
@@ -67,7 +66,6 @@ class LogServerInterfaceService:
             message.spec = message.spec + "_opt"
             self.specs_table[message.spec] = np.nan
         self.specs_table.loc[self.specs_table['element_id'] == message.id, [message.spec]] = message.value
-        print(self.specs_table)
 
     def prepare_log(self, log_type: LogType):
         print("Preparing a log")
@@ -92,12 +90,12 @@ class LogServerInterfaceService:
             print("Writing Specs")
 
     def get_log_chunk(self, log_type: LogType, offset: int, size: int):
-        if log_type is LogType.MESSAGE:
-            reader = open(self.message_file_path, "rb")
-        elif log_type is LogType.PERFORMANCE:
+        if log_type is LogType.PERFORMANCE:
             reader = open(self.performance_file_path, "rb")
         elif log_type is LogType.SPECS:
             reader = open(self.specs_file_path, "rb")
+        else:
+            reader = open(self.message_file_path, "rb")
 
         reader.seek(offset)
         data = reader.read(size)

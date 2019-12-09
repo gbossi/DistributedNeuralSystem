@@ -101,8 +101,15 @@ class Controller:
 
 
 def controller_main(master_ip, master_port):
+    # file csv con nome esplicito
+    # nomerete=VGG19, split_layer=10, ...
+    # dizionario
+    # passare dizionario
+
     controller = Controller(master_ip, master_port)
-    controller.perform_test("VGG19", split_layer=10, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
+
+
+    controller.perform_test(model_name="VGG19", split_layer=10, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
                             no_repetitions=2)
     controller.reset_system()
     controller.perform_test("VGG19", split_layer=12, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,

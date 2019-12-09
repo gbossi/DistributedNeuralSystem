@@ -18,6 +18,7 @@ class SinkClient:
         for attempt_no in range(num_retries):
             try:
                 self.transport.open()
+                return
             except TTransport.TTransportException as error:
                 if attempt_no < (num_retries-1):
                     print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
