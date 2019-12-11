@@ -116,6 +116,13 @@ class CloudServer:
         self.controller.set_state(ElementState.WAITING)
         self.cloud_model = self.controller.download_model()
         self.sink.reset_sink()
+        self.test = self.controller.get_test()
+        if self.test.is_test:
+            self.batch_size = self.test.edge_batch_size
+            self.no_images = self.test.number_of_images
+        else:
+            self.batch_size = BATCH_SIZE
+            self.no_images = NO_IMAGES
 
 
 def cloud_server_main(master_ip, master_port, sink_port=SINK_PORT):

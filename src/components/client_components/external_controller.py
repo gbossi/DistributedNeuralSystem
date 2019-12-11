@@ -1,7 +1,4 @@
-import sys
 from src.components.client_components.master_controller import MasterController
-
-sys.path.append("gen-py")
 from interfaces.ttypes import ModelConfiguration, ModelState, Test, LogType
 
 
@@ -16,25 +13,32 @@ class ExternalController(MasterController):
         return self.controller_interface.get_complete_configuration()
 
     def instantiate_model(self, model_name: str, split_layer: int):
+        self.send_log('Controller Model Setup')
         self.controller_interface.instantiate_model(ModelConfiguration(model_name=model_name, split_layer=split_layer))
 
     def set_model_state(self, state: ModelState):
+        self.send_log('Changing Model State')
         return self.controller_interface.set_model_state(model_state=state)
 
     def set_test(self, is_test: bool, number_of_images: int, edge_batch_size: int, cloud_batch_size: int):
+        self.send_log('Setting a new test')
         self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
                                                 edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
-    def run(self):
+    def set_system_run_state(self):
+        self.send_log('Changing the state of the elements connect to run')
         self.controller_interface.run()
 
-    def stop(self):
+    def set_system_stop_state(self):
+        self.send_log('Changing the state of the elements connect to stop')
         self.controller_interface.stop()
 
-    def reset(self):
+    def set_system_reset_state(self):
+        self.send_log('Changing the state of the elements connect to reset')
         self.controller_interface.reset()
 
     def download_log(self, log_type: LogType, saving_folder: str):
+        self.send_log('Downloading all the logs')
         self.logger_interface.prepare_log(log_type=log_type)
 
         batch_dimension = 100000  # 100 KB

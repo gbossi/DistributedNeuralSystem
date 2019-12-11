@@ -1,19 +1,18 @@
 import time
 import os
-import sys
+import csv
 import pandas as pd
 from src.components.client_components.external_controller import ExternalController
-
-sys.path.append("gen-py")
 from interfaces.ttypes import ElementType, ModelState, LogType, ElementState
 
 WAITING_TIME = 5
+
 
 class Controller:
     def __init__(self, master_ip, master_port):
         self.controller = ExternalController(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CONTROLLER)
-        self.base_path = "../../Computer/CNN"
+        self.base_path = "./Computer/CNN"
 
     def start_system(self,
                      model_name,
@@ -31,7 +30,7 @@ class Controller:
 
         time.sleep(time_limit)
 
-        self.controller.stop()
+        self.controller.set_system_stop_state()
 
     def perform_test(self,
                      model_name,
@@ -49,16 +48,17 @@ class Controller:
 
         while test_completed < no_repetitions:
             self.check_distributed_system(num_edges)
-            self.controller.run()
+            self.controller.set_system_run_state()
 
             while not self.controller.is_test_over():
                 time.sleep(WAITING_TIME)
+                print(self.controller.get_complete_configuration())
 
             test_completed += 1
-            path = self.base_path+"/"+model_name+"/split_layer_"+str(split_layer)+"/cloud_batch_"+ \
-                   str(cloud_batch_size)+"/edge_batch_size_"+str(edge_batch_size)+"/no_images_"+ \
-                   str(num_images)+"/"+str(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))+"/"+str(
-                test_completed)+"/"
+            path = self.base_path+'/'+model_name+'/split_layer_'+str(split_layer)+'/cloud_batch_' + \
+                   str(cloud_batch_size)+'/edge_batch_size_'+str(edge_batch_size)+'/no_images_' + \
+                   str(num_images)+'/'+str(time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()))+'/' + \
+                   str(test_completed)+'/'
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -66,23 +66,25 @@ class Controller:
             filename = self.controller.download_log(LogType.PERFORMANCE, path)
             self.complete_performance_csv(filename, model_name, split_layer, encoding=False)
             self.controller.download_log(LogType.SPECS, path)
+            self.controller.send_log('Test #' + str(test_completed) + ' completed')
 
-    def complete_performance_csv(self, filename, model_name, split_layer, encoding):
+    @staticmethod
+    def complete_performance_csv(filename, model_name, split_layer, encoding):
         df = pd.read_csv(filename)
         df["model_name"] = model_name
         df["split_layer"] = split_layer
         df["encoding"] = encoding
-        df.to_csv(filename)
+        df.to_csv(filename,  index=False)
 
     def setup_model(self, model_name, split_layer):
         self.controller.instantiate_model(model_name=model_name, split_layer=split_layer)
         self.controller.set_model_state(ModelState.AVAILABLE)
 
     def stop_system(self):
-        self.controller.stop()
+        self.controller.set_system_stop_state()
 
     def reset_system(self):
-        self.controller.reset()
+        self.controller.set_system_reset_state()
 
     def check_distributed_system(self, num_edges):
         current_edges = 0
@@ -100,22 +102,23 @@ class Controller:
             time.sleep(WAITING_TIME)
 
 
-def controller_main(master_ip, master_port):
-    # file csv con nome esplicito
-    # nomerete=VGG19, split_layer=10, ...
-    # dizionario
-    # passare dizionario
-
+def controller_main(master_ip, master_port, test_source):
     controller = Controller(master_ip, master_port)
-
-
-    controller.perform_test(model_name="VGG19", split_layer=10, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
-                            no_repetitions=2)
-    controller.reset_system()
-    controller.perform_test("VGG19", split_layer=12, num_images=20, num_edges=1, edge_batch_size=1, cloud_batch_size=1,
-                            no_repetitions=2)
+    with open(test_source) as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            controller.perform_test(model_name=row['model_name'],
+                                    split_layer=int(row['split_layer']),
+                                    num_images=int(row['num_images']),
+                                    num_edges=int(row['num_edges']),
+                                    edge_batch_size=int(row['edge_batch_size']),
+                                    cloud_batch_size=int(row['cloud_batch_size']),
+                                    no_repetitions=int(row['no_repetitions']))
+            controller.reset_system()
+    # controller.start_system()
     controller.stop_system()
 
 
 if __name__ == '__main__':
-    controller_main('localhost', 10100)
+    print(os.getcwd())
+    controller_main('localhost', 10100, './vgg19_test_configurations.csv')

@@ -1,13 +1,10 @@
 import os
 import uuid
-import sys
 import shutil
 import pandas as pd
 from src.utils.model_factory import ModelFactory
 from src.utils.surgeon import Surgeon
 from pathlib import Path
-
-sys.path.append("gen-py")
 from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
 from interfaces.ttypes import ModelState, ModelConfiguration
 
@@ -176,6 +173,7 @@ class TestSettings:
         self.started = False
         self.elements_running = 0
         self.elements_waiting = 0
+        self.test_completed = 1
 
     def get_test_specs(self):
         return self.values
@@ -188,8 +186,8 @@ class TestSettings:
         self.elements_waiting += 1
 
     def end_status(self):
-        if self.started and self.elements_running == self.elements_waiting:
-            self.elements_running = self.elements_running * 2
+        if self.started and self.elements_running * self.test_completed == self.elements_waiting:
+            self.test_completed += 1
             return True
         else:
             return False

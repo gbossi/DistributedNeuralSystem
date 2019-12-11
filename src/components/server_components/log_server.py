@@ -1,13 +1,10 @@
 import time
 import os
-import sys
 import shutil
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from src.utils.enums import get_thrift_enum_name
-
-sys.path.append("gen-py")
 from interfaces.ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
 
 
@@ -37,7 +34,7 @@ class LogServerInterfaceService:
                                  'element_type': get_thrift_enum_name(message.element_type),
                                  'element_id': message.id,
                                  'message': message.message}])
-
+        print(new_row.to_string)
         self.message_table = self.message_table.append(new_row, sort=False, ignore_index=True)
 
     def log_performance_message(self, message: PerformanceMessage):

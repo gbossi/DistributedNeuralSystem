@@ -1,13 +1,9 @@
 import time
-import sys
-from src.components.client_components.master_controller import MasterController
 import tensorflow as tf
-
-sys.path.append("gen-py")
 from interfaces.ttypes import ElementState, ElementType, PerformanceMessage
+from src.components.client_components.master_controller import MasterController
 
 WAITING_TIME = 5
-
 
 class InternalController(MasterController):
     def __init__(self, server_ip='localhost', port=10100):
@@ -49,16 +45,20 @@ class InternalController(MasterController):
         self.current_state = self.controller_interface.set_state(self.element_id, element_state)
 
     def get_test(self):
+        self.send_log('Getting a new test')
         self.set_state(ElementState.READY)
         self.wait_in_ready_state()
         return self.controller_interface.get_test(self.element_type)
 
     def test_completed(self):
+        self.send_log('Completed test')
         self.controller_interface.test_completed()
 
     def download_model(self):
+        self.send_log('Downloading a new model')
         while not self.controller_interface.is_model_available():
             time.sleep(WAITING_TIME)
+            print('waitin')
 
         batch_dimension = 100000  # 100 KB
         current_position = 0
