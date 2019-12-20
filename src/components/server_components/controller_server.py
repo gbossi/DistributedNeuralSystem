@@ -46,13 +46,16 @@ class ControllerInterfaceService:
             shutil.rmtree(server_base_path)
             os.makedirs(server_base_path)
 
-        self.device_model_path = device_base_path+device_model.name+".h5"
-        Path(self.device_model_path).touch()
-        device_model.save(self.device_model_path)
+        self.device_model_path = device_base_path+device_model.name
+        Path(self.device_model_path+".h5").touch()
+        device_model.save(self.device_model_path+".h5")
 
-        self.server_model_path = server_base_path+server_model.name+".h5"
-        Path(self.server_model_path).touch()
-        server_model.save(self.server_model_path)
+        device_arm_model = Surgeon().convert_model(device_model)
+        open(self.device_model_path + ".tflite", "wb").write(device_arm_model)
+
+        self.server_model_path = server_base_path+server_model.name
+        Path(self.server_model_path+".h5").touch()
+        server_model.save(self.server_model_path+".h5")
 
         return model_configuration
 
@@ -66,7 +69,7 @@ class ControllerInterfaceService:
         else:
             return True
 
-    def get_model_chunk(self, server_type: ElementType, offset: int, size: int):
+    def get_model_chunk(self, element_id, offset: int, size: int):
         """
         Function used to download the partial neural network model by the
         clients and the computational server, depending on the type it will
@@ -78,10 +81,20 @@ class ControllerInterfaceService:
         :return: a binary file chunk
         """
 
-        reader = {ElementType.CLIENT: open(self.device_model_path, "rb"),
-                  ElementType.CLOUD: open(self.server_model_path, "rb")
-                  }[server_type]
+        type = self.element_table.get_element_type(element_id)
+        architecture = self.element_table.get_element_architecture(element_id)
+        reader = None
 
+        if type == ElementType.CLIENT:
+            if architecture == 'x86_64':
+                reader = open(self.device_model_path+".h5", "rb")
+            else:
+                reader = open(self.device_model_path+".tflite", "rb")
+        if type == ElementType.CLOUD:
+            reader = open(self.server_model_path+".h5", "rb")
+
+        print('type is ' + str(type))
+        print('architecture is '+ architecture)
         reader.seek(offset)
         data = reader.read(size)
         current_position = reader.tell()
@@ -102,11 +115,20 @@ class ControllerInterfaceService:
 
         element_id = str(uuid.uuid4().hex)
         if local_config.type is ElementType.CLOUD:
-            self.element_table.insert(element_id, local_config.type, local_config.ip, local_config.port)
+            self.element_table.insert(element_id,
+                                      local_config.type,
+                                      local_config.architecture,
+                                      local_config.ip,
+                                      local_config.port)
         elif local_config.type is ElementType.CLIENT:
-            self.element_table.insert(element_id, local_config.type)
+            self.element_table.insert(element_id,
+                                      local_config.type,
+                                      local_config.architecture)
         elif local_config.type is ElementType.CONTROLLER:
-            self.element_table.insert(element_id, local_config.type, element_state=ElementState.RUNNING)
+            self.element_table.insert(element_id,
+                                      local_config.type,
+                                      local_config.architecture,
+                                      element_state=ElementState.RUNNING)
 
         return element_id
 
@@ -202,9 +224,9 @@ class ElementTable:
     def __init__(self):
         self.elements_table = pd.DataFrame()
 
-    def insert(self, element_id, element_type, element_ip='unavailable', element_port=0,
+    def insert(self, element_id, element_type, architecture,  element_ip='unavailable', element_port=0,
                element_state=ElementState.WAITING):
-        new_row = pd.DataFrame([{'type': element_type, 'ip': element_ip,
+        new_row = pd.DataFrame([{'type': element_type, 'ip': element_ip, 'architecture': architecture,
                                  'port': element_port, 'state': element_state}], index=[element_id])
         self.elements_table = self.elements_table.append(new_row)
 
@@ -232,6 +254,9 @@ class ElementTable:
 
     def get_element_type(self, element_id):
         return self.elements_table.at[element_id, 'type']
+
+    def get_element_architecture(self, element_id):
+        return self.elements_table.at[element_id, 'architecture']
 
     def set_element_state(self, element_id, state):
         print(str(self.elements_table.at[element_id, 'state']))

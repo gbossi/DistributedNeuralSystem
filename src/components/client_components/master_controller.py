@@ -62,10 +62,12 @@ class MasterController:
         :return: null
         """
         self.element_type = element_type
+        command = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
+        architecture = command.stdout.decode().rstrip()
         local_config = {
-            ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port),
-            ElementType.CLIENT: ElementConfiguration(type=self.element_type),
-            ElementType.CONTROLLER: ElementConfiguration(type=self.element_type)
+            ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port, architecture=architecture),
+            ElementType.CLIENT: ElementConfiguration(type=self.element_type, architecture=architecture),
+            ElementType.CONTROLLER: ElementConfiguration(type=self.element_type, architecture=architecture)
         }[self.element_type]
 
         self.element_id = self.controller_interface.register_element(local_config)
@@ -85,15 +87,12 @@ class MasterController:
                     self.logger_interface.log_specs_message(SpecsMessage(time.time(), self.element_id,
                                                                          self.element_type, str(line[0]),
                                                                          str(' '.join(line[1:]))))
-        command = subprocess.run(['lsb_release', '-a'], stdout=subprocess.PIPE)
-        message_list = command.stdout.decode().split('\n')
+        command = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
+        message = command.stdout.decode().rstrip()
         if command.returncode == 0:
-            for i in range(1, len(message_list)):
-                line = list(filter(None, message_list[i].split('\t')))
-                if len(line) > 1:
-                    self.logger_interface.log_specs_message(SpecsMessage(time.time(), self.element_id,
-                                                                         self.element_type, str(line[0]),
-                                                                         str(' '.join(line[1:]))))
+            self.logger_interface.log_specs_message(SpecsMessage(time.time(), self.element_id,
+                                                                 self.element_type, "architecture",
+                                                                 message))
 
     def is_test_over(self):
         return self.controller_interface.is_test_over()

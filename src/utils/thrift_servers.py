@@ -4,6 +4,8 @@ from thrift.protocol import TBinaryProtocol
 from thrift.server import TServer, TNonblockingServer
 from enum import Enum
 import socket
+import signal
+import os
 
 
 class ServerType(Enum):
@@ -37,4 +39,4 @@ class Server:
         self.server.serve()
 
     def stop(self):
-        pass
+        os.kill(os.getpid(), signal.SIGKILL)

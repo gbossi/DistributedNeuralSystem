@@ -115,7 +115,6 @@ def controller_main(master_ip, master_port, test_source):
                                     cloud_batch_size=int(row['cloud_batch_size']),
                                     no_repetitions=int(row['no_repetitions']))
             controller.reset_system()
-    # controller.start_system()
     controller.stop_system()
 
 

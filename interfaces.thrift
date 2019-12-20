@@ -36,6 +36,7 @@ struct ElementConfiguration{
     3:optional i32 port;
     4:optional string id;
     5:optional ElementState state;
+    6:optional string architecture;
 }
 
 struct ModelConfiguration{
@@ -108,7 +109,7 @@ service ControllerInterface{
     Configuration get_complete_configuration()
     ElementState get_state(1:string element_id)
     ElementState set_state(1:string element_id, 2:ElementState new_state)
-    FileChunk get_model_chunk(1:ElementType server_type, 2:i64 offset, 3:i32 size)
+    FileChunk get_model_chunk(1:string element_id, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
     bool is_model_available()
     bool is_cloud_available()

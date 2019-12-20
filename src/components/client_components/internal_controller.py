@@ -1,5 +1,4 @@
 import time
-import tensorflow as tf
 from interfaces.ttypes import ElementState, ElementType, PerformanceMessage
 from src.components.client_components.master_controller import MasterController
 
@@ -55,12 +54,12 @@ class InternalController(MasterController):
         self.controller_interface.test_completed()
 
     def download_model(self):
-        self.send_log('Downloading a new model')
+        self.send_log('Waiting for a new model')
         while not self.controller_interface.is_model_available():
             time.sleep(WAITING_TIME)
-            print('waitin')
 
-        batch_dimension = 100000  # 100 KB
+        self.send_log('Downloading a new model')
+        batch_dimension = 1000000  # 1 MB
         current_position = 0
         remaining = 1
 
@@ -71,7 +70,7 @@ class InternalController(MasterController):
         writer = open(filename, "wb")
 
         while remaining:
-            file_chunk = self.controller_interface.get_model_chunk(self.element_type,
+            file_chunk = self.controller_interface.get_model_chunk(self.element_id,
                                                                    current_position, batch_dimension)
             current_position += batch_dimension
             remaining = file_chunk.remaining
@@ -79,7 +78,7 @@ class InternalController(MasterController):
                 batch_dimension = remaining
             writer.write(file_chunk.data)
 
-        return tf.keras.models.load_model(filename)
+        return filename
 
     def log_performance_message(self, no_images_predicted: int, images_ids: str, elapsed_time: float):
         self.__log_performance__(no_images_predicted=no_images_predicted,

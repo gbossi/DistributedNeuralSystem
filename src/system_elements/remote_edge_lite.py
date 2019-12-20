@@ -1,10 +1,10 @@
+import random
 import time
 import numpy as np
 import os
-import zlib
-import tensorflow as tf
 
-from keras_preprocessing.image import ImageDataGenerator, DirectoryIterator
+from PIL import Image
+from tflite_runtime.interpreter import Interpreter
 from pathlib import Path
 from src.components.client_components.sink_client import SinkClient
 from src.components.client_components.internal_controller import InternalController
@@ -20,7 +20,9 @@ class RemoteEdge:
         self.controller = InternalController(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
         model_filename = self.controller.download_model()
-        self.edge_model = tf.keras.models.load_model(model_filename)
+        self.interpreter = Interpreter(model_filename)
+        self.interpreter.allocate_tensors()
+
         cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
                                                                            ElementType.CLOUD)[0]
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
@@ -36,10 +38,8 @@ class RemoteEdge:
 
     def run(self, images_source):
         datagen = DataGenerator(images_source,
-                                ImageDataGenerator(),
                                 batch_size=self.batch_size,
-                                target_size=tuple(self.edge_model.layers[1].input_shape[1:3]),
-                                interpolation="nearest")
+                                target_size=self.interpreter.get_input_details()[0]['shape'][1:3])
 
         if self.test.is_test:
             self.run_test(datagen)
@@ -65,21 +65,14 @@ class RemoteEdge:
         self.controller.send_log("Starting a new test")
 
         while self.controller.update_state() == ElementState.RUNNING:
-            data_batch, filenames = next(datagen)
+            data_batch, filenames = datagen.get_batch()
             filenames = self.clean_filenames(filenames)
             start = time.time()
-            predicted = self.edge_model.predict(data_batch)
+            predicted = predict_batch(self.interpreter, data_batch)
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
                                                               elapsed_time=end-start, shape=predicted.shape)
-            start = time.time()
-            predicted_compressed = zlib.compress(predicted, 1)
-            end = time.time()
-
-            print("Initial Dimension: ", str(len(predicted.tobytes())))
-            print("Final Dimension: ", str(len(predicted_compressed)))
-            print("Time to compress the "+str(len(filenames))+"-image batch: "+str(end-start))
 
             images_read += self.batch_size
             if images_read >= self.no_images:
@@ -90,10 +83,10 @@ class RemoteEdge:
         self.controller.send_log("Starting edge, running until status change")
 
         while self.controller.update_state() == ElementState.RUNNING:
-            data_batch, filenames = next(datagen)
+            data_batch, filenames = datagen.get_batch()
             filenames = self.clean_filenames(filenames)
             start = time.time()
-            predicted = self.edge_model.predict(data_batch)
+            predicted = predict_batch(self.interpreter, data_batch)
             end = time.time()
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
@@ -102,7 +95,9 @@ class RemoteEdge:
     def reset_values(self):
         self.controller.set_state(ElementState.WAITING)
         model_filename = self.controller.download_model()
-        self.edge_model = tf.keras.models.load_model(model_filename)
+        self.interpreter = Interpreter(model_filename)
+        self.interpreter.allocate_tensors()
+
         cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
                                                                            ElementType.CLOUD)[0]
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
@@ -119,23 +114,63 @@ class RemoteEdge:
     def clean_filenames(self, filenames):
         clean_names = []
         for file in filenames:
-            clean_names = clean_names + [self.controller.element_id + "-" + Path(file).name]
+            clean_names = clean_names+[self.controller.element_id+"-"+Path(file).name]
         return clean_names
 
 
-class DataGenerator(DirectoryIterator):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print(self.filepaths)
-        self.filenames_np = np.array(self.filepaths)
-        self.class_mode = None
-
-    def _get_batches_of_transformed_samples(self, index_array):
-        return (super()._get_batches_of_transformed_samples(index_array),
-                self.filenames_np[index_array])
+def predict_batch(interpreter, data_batch):
+    result = []
+    #todo modidfy the following filling of the matrix
+    for image in data_batch:
+        set_input_tensor(interpreter, image)
+        result = result+[classify_image(interpreter, image)]
+    return result
 
 
-def remote_edge_main(master_ip, master_port, images_source='./images_source/'):
+def set_input_tensor(interpreter, image):
+    tensor_index = interpreter.get_input_details()[0]['index']
+    input_tensor = interpreter.tensor(tensor_index)()[0]
+    input_tensor[:, :] = image
+
+
+def classify_image(interpreter, image):
+    """Returns a sorted array of classification results."""
+    set_input_tensor(interpreter, image)
+    interpreter.invoke()
+    output_details = interpreter.get_output_details()[0]
+    output = interpreter.get_tensor(output_details['index'])
+    return output
+
+
+class DataGenerator:
+    def __init__(self, source: str, batch_size: int, target_size):
+        self.filenames = self.retrieve_filenames(source)
+        self.batch_size = batch_size
+        self.target_size = target_size
+
+    def get_batch(self):
+        path_list = []
+        data_batch = []
+        for i in range(self.batch_size):
+            path = random.choice(self.filenames)
+            path_list = path_list+[path]
+            image = Image.open(path).convert('RGB').resize(self.target_size, Image.NEAREST)
+            data_batch = data_batch+[image]
+        return data_batch, path_list
+
+    @staticmethod
+    def retrieve_filenames(source):
+        dirlist = [item for item in os.listdir(source) if os.path.isdir(os.path.join(source, item))]
+        filenames = []
+        for directory in dirlist:
+            subdir = os.path.join(source, directory)
+            typedir = [item for item in os.listdir(subdir)]
+            for exname in typedir:
+                filenames = filenames+[os.path.join(subdir, exname)]
+        return filenames
+
+
+def remote_edge_lite_main(master_ip, master_port, images_source='./images_source/'):
     result = ElementState.RUNNING
     client = RemoteEdge(master_ip, master_port)
     while result != ElementState.STOP:
@@ -145,4 +180,4 @@ def remote_edge_main(master_ip, master_port, images_source='./images_source/'):
 
 
 if __name__ == '__main__':
-    remote_edge_main("localhost", 10100)
+    remote_edge_lite_main("localhost", 10100)

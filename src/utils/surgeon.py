@@ -83,6 +83,10 @@ class Surgeon:
             raise Exception("Not keras compatible model")
         return model
 
+    def convert_model(self, model):
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        tflite_model = converter.convert()
+        return tflite_model
 
 
 

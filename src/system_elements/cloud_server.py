@@ -1,5 +1,6 @@
 import threading
 import time
+import tensorflow as tf
 
 from src.utils.thrift_servers import Server, ServerType
 from tensorflow.keras.applications.imagenet_utils import decode_predictions
@@ -36,7 +37,8 @@ class CloudServer:
     def __init__(self, master_ip, master_port, sink: SinkInterfaceService, server):
         self.controller = InternalController(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CLOUD, server_ip=server.ip, server_port=server.port)
-        self.cloud_model = self.controller.download_model()
+        model_filename = self.controller.download_model()
+        self.cloud_model = tf.keras.models.load_model(model_filename)
         self.sink = sink
 
         self.test = self.controller.get_test()
@@ -114,7 +116,8 @@ class CloudServer:
 
     def reset_values(self):
         self.controller.set_state(ElementState.WAITING)
-        self.cloud_model = self.controller.download_model()
+        model_filename = self.controller.download_model()
+        self.cloud_model = tf.keras.models.load_model(model_filename)
         self.sink.reset_sink()
         self.test = self.controller.get_test()
         if self.test.is_test:
