@@ -45,5 +45,10 @@ class SinkClient:
         self.server_interface.put_partial_result(data)
 
     def register_to_sink(self, model_name):
-        self.server_interface.add_client(model_name)
+        #todo improve the connect to sink function, maybe using a list of available sinks
+        success = self.server_interface.add_client(model_name)
+        while not success:
+            time.sleep(3)
+            success = self.server_interface.add_client(model_name)
+        return
 

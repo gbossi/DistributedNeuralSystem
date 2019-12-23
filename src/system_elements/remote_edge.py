@@ -1,7 +1,6 @@
 import time
 import numpy as np
 import os
-import zlib
 import tensorflow as tf
 
 from keras_preprocessing.image import ImageDataGenerator, DirectoryIterator
@@ -60,14 +59,6 @@ class RemoteEdge:
             self.sink_client.put_partial_result(filenames, predicted)
             self.controller.log_performance_message_and_shape(self.batch_size, images_ids=filenames,
                                                               elapsed_time=end-start, shape=predicted.shape)
-            start = time.time()
-            predicted_compressed = zlib.compress(predicted, 1)
-            end = time.time()
-
-            print("Initial Dimension: ", str(len(predicted.tobytes())))
-            print("Final Dimension: ", str(len(predicted_compressed)))
-            print("Time to compress the "+str(len(filenames))+"-image batch: "+str(end-start))
-
             images_read += self.batch_size
             if images_read >= self.no_images:
                 self.controller.test_completed()

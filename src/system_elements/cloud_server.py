@@ -82,7 +82,7 @@ class CloudServer:
                     print(images_read)
                     current_size = self.sink.queue.qsize()
                     remaining_batch = current_size if current_size > 0 else self.batch_size
-                    if self.sink.client_connected * self.no_images >= images_read:
+                    if images_read >= (self.sink.client_connected * self.no_images):
                         self.controller.test_completed()
                         self.controller.set_state(ElementState.READY)
 

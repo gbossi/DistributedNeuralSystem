@@ -60,6 +60,7 @@ class InternalController(MasterController):
             time.sleep(WAITING_TIME)
 
         self.model_id = self.controller_interface.get_model_id()
+        print(self.model_id)
         self.send_log('Downloading a new model')
         batch_dimension = 1000000  # 1 MB
         current_position = 0

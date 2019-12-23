@@ -48,8 +48,8 @@ class SinkInterfaceService:
             print("Input Error, Unhandled Image Dimension "+str(self.data_shape)+"!="+str(image_shape)+" skipping input")
             return False
 
-    def add_client(self, model_id):
-        if model_id == self.model_id:
+    def add_client(self, ext_model_id):
+        if ext_model_id == self.model_id:
             self.client_connected += 1
             return True
         else:
