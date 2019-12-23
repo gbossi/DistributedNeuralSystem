@@ -19,20 +19,7 @@ class RemoteEdge:
         os.environ['IP_MASTER'] = master_ip
         self.controller = InternalController(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
-        model_filename = self.controller.download_model()
-        self.edge_model = tf.keras.models.load_model(model_filename)
-        cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
-                                                                           ElementType.CLOUD)[0]
-        self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
-        self.sink_client.connect_to_sink_service()
 
-        self.test = self.controller.get_test()
-        if self.test.is_test:
-            self.batch_size = self.test.edge_batch_size
-            self.no_images = self.test.number_of_images
-        else:
-            self.batch_size = BATCH_SIZE
-            self.no_images = NO_IMAGES
 
     def run(self, images_source):
         datagen = DataGenerator(images_source,
@@ -107,6 +94,7 @@ class RemoteEdge:
                                                                            ElementType.CLOUD)[0]
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
         self.sink_client.connect_to_sink_service()
+        self.sink_client.register_to_sink(self.controller.model_id)
 
         self.test = self.controller.get_test()
         if self.test.is_test:
@@ -115,6 +103,17 @@ class RemoteEdge:
         else:
             self.batch_size = BATCH_SIZE
             self.no_images = NO_IMAGES
+
+        if self.controller.current_state == ElementState.RUNNING:
+            self.controller.send_log("Starting a Test")
+
+        if self.controller.current_state == ElementState.RESET:
+            self.controller.send_log("Waiting a new model from master server")
+
+        if self.controller.current_state == ElementState.STOP:
+            self.controller.send_log("Shutting down the mobile device")
+
+        return self.controller.current_state
 
     def clean_filenames(self, filenames):
         clean_names = []
@@ -136,8 +135,8 @@ class DataGenerator(DirectoryIterator):
 
 
 def remote_edge_main(master_ip, master_port, images_source='./images_source/'):
-    result = ElementState.RUNNING
     client = RemoteEdge(master_ip, master_port)
+    result = client.reset_values()
     while result != ElementState.STOP:
         result = client.run(images_source)
         if result == ElementState.RESET:

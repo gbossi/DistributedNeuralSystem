@@ -101,6 +101,7 @@ exception FileNotFound{
 service SinkInterface{
     void put_partial_result(1:Image result)
     Image get_remote_partial_result(1:i16 batch_dimension)
+    bool add_client(1:string model_name)
 }
 
 
@@ -109,6 +110,7 @@ service ControllerInterface{
     Configuration get_complete_configuration()
     ElementState get_state(1:string element_id)
     ElementState set_state(1:string element_id, 2:ElementState new_state)
+    string get_model_id()
     FileChunk get_model_chunk(1:string element_id, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
     bool is_model_available()

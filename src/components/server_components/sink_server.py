@@ -5,8 +5,10 @@ from interfaces.ttypes import Image
 
 class SinkInterfaceService:
     def __init__(self):
+        self.model_id =None
         self.queue = Queue()
         self.data_shape = None
+        self.client_connected = 0
 
     def put_partial_result(self, image_tuple):
         image_data = np.frombuffer(image_tuple.arr_bytes, dtype=image_tuple.data_type).reshape(image_tuple.shape)
@@ -46,5 +48,14 @@ class SinkInterfaceService:
             print("Input Error, Unhandled Image Dimension "+str(self.data_shape)+"!="+str(image_shape)+" skipping input")
             return False
 
-    def reset_sink(self):
+    def add_client(self, model_id):
+        if model_id == self.model_id:
+            self.client_connected += 1
+            return True
+        else:
+            return False
+
+    def reset_sink(self, model_id):
         self.data_shape = None
+        self.client_connected = 0
+        self.model_id = model_id

@@ -21,7 +21,7 @@ class SinkClient:
                 self.buffered_transport.open()
                 return
             except TTransport.TTransportException:
-                if attempt_no < (num_retries-1):
+                if attempt_no < num_retries:
                     print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
                           +" out of "+str(num_retries)+" attempts")
                     time.sleep(1)
@@ -43,3 +43,7 @@ class SinkClient:
     def put_partial_result(self, image_ids, prediction):
         data = Image(image_ids, prediction.tobytes(), prediction.dtype.name, prediction.shape)
         self.server_interface.put_partial_result(data)
+
+    def register_to_sink(self, model_name):
+        self.server_interface.add_client(model_name)
+

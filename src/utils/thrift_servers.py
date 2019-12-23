@@ -6,6 +6,7 @@ from enum import Enum
 import socket
 import signal
 import os
+import time
 
 
 class ServerType(Enum):
@@ -39,4 +40,10 @@ class Server:
         self.server.serve()
 
     def stop(self):
+        """
+        Wait a proper number of second in to give the possibility to the client to close the connection and
+        shut itself down
+        :return:
+        """
+        time.sleep(10)
         os.kill(os.getpid(), signal.SIGKILL)

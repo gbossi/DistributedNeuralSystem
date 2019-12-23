@@ -24,30 +24,19 @@ class CloudThread(threading.Thread):
         self.sink = sink
 
     def run(self):
-        result = ElementState.RUNNING
         cloud = CloudServer(self.master_ip, self.master_port, self.sink, self.server)
+        result = cloud.reset_values()
         while result != ElementState.STOP:
             result = cloud.run()
             if result == ElementState.RESET:
-                cloud.reset_values()
+                result = cloud.reset_values()
         self.server.stop()
-
 
 class CloudServer:
     def __init__(self, master_ip, master_port, sink: SinkInterfaceService, server):
         self.controller = InternalController(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CLOUD, server_ip=server.ip, server_port=server.port)
-        model_filename = self.controller.download_model()
-        self.cloud_model = tf.keras.models.load_model(model_filename)
         self.sink = sink
-
-        self.test = self.controller.get_test()
-        if self.test.is_test:
-            self.batch_size = self.test.edge_batch_size
-            self.no_images = self.test.number_of_images
-        else:
-            self.batch_size = BATCH_SIZE
-            self.no_images = NO_IMAGES
 
     def run(self):
 
@@ -73,7 +62,9 @@ class CloudServer:
     def run_test(self):
         self.controller.send_log("Start processing images in queue")
         remaining_batch = self.batch_size
+        images_read = 0
         test_started = False
+
         while self.controller.update_state() == ElementState.RUNNING:
             if self.sink.queue.qsize() >= remaining_batch:
                 id_list, data_batch = self.sink.get_partial_result(self.batch_size)
@@ -81,15 +72,19 @@ class CloudServer:
                 predicted = self.cloud_model.predict(data_batch)
                 end = time.time()
                 self.controller.log_performance_message(self.batch_size, images_ids=id_list, elapsed_time=end-start)
+                images_read += self.batch_size
                 remaining_batch = self.batch_size
                 test_started = True
             else:
                 time.sleep(3)
-                current_size = self.sink.queue.qsize()
-                remaining_batch = current_size if current_size > 0 else self.batch_size
-                if self.sink.queue.empty() and test_started:
-                    self.controller.test_completed()
-                    self.controller.set_state(ElementState.READY)
+                if test_started:
+                    print(self.sink.client_connected*self.no_images)
+                    print(images_read)
+                    current_size = self.sink.queue.qsize()
+                    remaining_batch = current_size if current_size > 0 else self.batch_size
+                    if self.sink.client_connected * self.no_images >= images_read:
+                        self.controller.test_completed()
+                        self.controller.set_state(ElementState.READY)
 
     def run_cloud(self):
         self.controller.send_log("Start processing images in queue until stop status")
@@ -118,7 +113,7 @@ class CloudServer:
         self.controller.set_state(ElementState.WAITING)
         model_filename = self.controller.download_model()
         self.cloud_model = tf.keras.models.load_model(model_filename)
-        self.sink.reset_sink()
+        self.sink.reset_sink(self.controller.model_id)
         self.test = self.controller.get_test()
         if self.test.is_test:
             self.batch_size = self.test.edge_batch_size
@@ -126,6 +121,17 @@ class CloudServer:
         else:
             self.batch_size = BATCH_SIZE
             self.no_images = NO_IMAGES
+
+        if self.controller.current_state == ElementState.RUNNING:
+            self.controller.send_log("Starting a Test")
+
+        if self.controller.current_state == ElementState.RESET:
+            self.controller.send_log("Waiting a new model from master server")
+
+        if self.controller.current_state == ElementState.STOP:
+            self.controller.send_log("Shutting down the mobile device")
+
+        return self.controller.current_state
 
 
 def cloud_server_main(master_ip, master_port, sink_port=SINK_PORT):

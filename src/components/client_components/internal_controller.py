@@ -8,6 +8,7 @@ class InternalController(MasterController):
     def __init__(self, server_ip='localhost', port=10100):
         super(InternalController, self).__init__(server_ip, port)
         self.last_update = 0
+        self.model_id = None
 
     def wait_in_ready_state(self):
         while self.current_state == ElementState.READY:
@@ -58,6 +59,7 @@ class InternalController(MasterController):
         while not self.controller_interface.is_model_available():
             time.sleep(WAITING_TIME)
 
+        self.model_id = self.controller_interface.get_model_id()
         self.send_log('Downloading a new model')
         batch_dimension = 1000000  # 1 MB
         current_position = 0

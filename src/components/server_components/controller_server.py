@@ -15,7 +15,10 @@ class ControllerInterfaceService:
         self.server_model_path = None
         self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
+        self.model_factory = ModelFactory()
+        self.surgeon = Surgeon()
         self.test_settings = None
+        self.model_id = None
 
     # --------- MODEL HANDLING SECTION --------- #
 
@@ -28,8 +31,8 @@ class ControllerInterfaceService:
         :return: None
         """
 
-        device_model, server_model = Surgeon().split(
-            ModelFactory().get_new_model(model_configuration.model_name),
+        device_model, server_model = self.surgeon.split(
+            self.model_factory.get_new_model(model_configuration.model_name),
             model_configuration.split_layer)
 
         device_base_path = "./models/client/"
@@ -50,14 +53,19 @@ class ControllerInterfaceService:
         Path(self.device_model_path+".h5").touch()
         device_model.save(self.device_model_path+".h5")
 
-        device_arm_model = Surgeon().convert_model(device_model)
+        device_arm_model = self.surgeon.convert_model(device_model)
         open(self.device_model_path + ".tflite", "wb").write(device_arm_model)
 
         self.server_model_path = server_base_path+server_model.name
         Path(self.server_model_path+".h5").touch()
         server_model.save(self.server_model_path+".h5")
 
+        self.model_id = server_model.name[-36:]
+
         return model_configuration
+
+    def get_model_id(self):
+        return self.model_id
 
     def set_model_state(self, model_state: ModelState):
         self.model_state = model_state
