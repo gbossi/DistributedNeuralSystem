@@ -19,7 +19,6 @@ class RemoteEdge:
         self.controller = InternalController(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
 
-
     def run(self, images_source):
         datagen = DataGenerator(images_source,
                                 ImageDataGenerator(),
@@ -80,6 +79,7 @@ class RemoteEdge:
     def reset_values(self):
         self.controller.set_state(ElementState.WAITING)
         model_filename = self.controller.download_model()
+        self.edge_model = None
         self.edge_model = tf.keras.models.load_model(model_filename)
         cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
                                                                            ElementType.CLOUD)[0]
@@ -116,7 +116,6 @@ class RemoteEdge:
 class DataGenerator(DirectoryIterator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        print(self.filepaths)
         self.filenames_np = np.array(self.filepaths)
         self.class_mode = None
 

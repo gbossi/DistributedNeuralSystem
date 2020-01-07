@@ -32,6 +32,7 @@ class CloudThread(threading.Thread):
                 result = cloud.reset_values()
         self.server.stop()
 
+
 class CloudServer:
     def __init__(self, master_ip, master_port, sink: SinkInterfaceService, server):
         self.controller = InternalController(server_ip=master_ip, port=master_port)
@@ -39,7 +40,6 @@ class CloudServer:
         self.sink = sink
 
     def run(self):
-
         if self.test.is_test:
             self.run_test()
         else:
@@ -112,6 +112,7 @@ class CloudServer:
     def reset_values(self):
         self.controller.set_state(ElementState.WAITING)
         model_filename = self.controller.download_model()
+        self.cloud_model = None
         self.cloud_model = tf.keras.models.load_model(model_filename)
         self.sink.reset_sink(self.controller.model_id)
         self.test = self.controller.get_test()

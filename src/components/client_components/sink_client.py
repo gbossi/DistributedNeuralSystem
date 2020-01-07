@@ -21,9 +21,9 @@ class SinkClient:
                 self.buffered_transport.open()
                 return
             except TTransport.TTransportException:
-                if attempt_no < num_retries:
-                    print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
-                          +" out of "+str(num_retries)+" attempts")
+                print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
+                      +" out of "+str(num_retries)+" attempts")
+                if attempt_no < (num_retries-1):
                     time.sleep(1)
                 else:
                     print("Last Attempt - Checking remote computing server on the master server")
@@ -44,11 +44,12 @@ class SinkClient:
         data = Image(image_ids, prediction.tobytes(), prediction.dtype.name, prediction.shape)
         self.server_interface.put_partial_result(data)
 
-    def register_to_sink(self, model_name):
+    def register_to_sink(self, model_id):
         #todo improve the connect to sink function, maybe using a list of available sinks
-        success = self.server_interface.add_client(model_name)
+        time.sleep(2)
+        success = self.server_interface.add_client(model_id)
         while not success:
             time.sleep(3)
-            success = self.server_interface.add_client(model_name)
+            success = self.server_interface.add_client(model_id)
         return
 

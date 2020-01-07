@@ -20,7 +20,6 @@ class RemoteEdge:
         self.controller = InternalController(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
 
-
     def run(self, images_source):
         datagen = DataGenerator(images_source,
                                 batch_size=self.batch_size,
@@ -82,7 +81,6 @@ class RemoteEdge:
         model_filename = self.controller.download_model()
         self.interpreter = Interpreter(model_filename)
         self.interpreter.allocate_tensors()
-
         cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
                                                                            ElementType.CLOUD)[0]
         self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
