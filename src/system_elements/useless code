@@ -1,0 +1,7 @@
+            start = time.time()
+            predicted_compressed = zlib.compress(predicted, 1)
+            end = time.time()
+
+            print("Initial Dimension: ", str(len(predicted.tobytes())))
+            print("Final Dimension: ", str(len(predicted_compressed)))
+            print("Time to compress the "+str(len(filenames))+"-image batch: "+str(end-start))

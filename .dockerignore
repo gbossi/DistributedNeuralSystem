@@ -1,0 +1,11 @@
+# Excluding the unnecessary directory for the edge
+/.keras
+*/Computer*
+*/logs*
+/models
+/setup
+/test_configs
+/virtualenv
+/yolo
+*/.h5*
+

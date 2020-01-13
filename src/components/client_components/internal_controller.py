@@ -56,11 +56,12 @@ class InternalController(MasterController):
 
     def download_model(self):
         self.send_log('Waiting for a new model')
-        while not self.controller_interface.is_model_available():
+        model_set = False
+        while not model_set:
+            self.model_id = self.controller_interface.get_model_id(self.element_id)
+            model_set = self.controller_interface.is_model_available(self.element_id, self.model_id)
             time.sleep(WAITING_TIME)
 
-        self.model_id = self.controller_interface.get_model_id()
-        print(self.model_id)
         self.send_log('Downloading a new model')
         batch_dimension = 1000000  # 1 MB
         current_position = 0

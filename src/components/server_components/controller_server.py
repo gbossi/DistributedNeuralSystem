@@ -18,7 +18,6 @@ class ControllerInterfaceService:
         self.model_factory = ModelFactory()
         self.surgeon = Surgeon()
         self.test_settings = None
-        self.model_id = None
 
     # --------- MODEL HANDLING SECTION --------- #
 
@@ -60,22 +59,28 @@ class ControllerInterfaceService:
         Path(self.server_model_path+".h5").touch()
         server_model.save(self.server_model_path+".h5")
 
-        self.model_id = server_model.name[-36:]
+        return server_model.name[-36:]
 
-        return model_configuration
+    def get_model_id(self, element_id):
+        model_id = self.element_table.get_model_id(element_id)
+        if model_id is None:
+            return 'model_not_set'
+        else:
+            return model_id
 
-    def get_model_id(self):
-        return self.model_id
+    def zip_model_element(self, element_id, model_id):
+        self.element_table.update_model(element_id, model_id)
+        return
 
     def set_model_state(self, model_state: ModelState):
         self.model_state = model_state
         return self.model_state
 
-    def is_model_available(self):
-        if self.model_state != ModelState.AVAILABLE:
-            return False
-        else:
+    def is_model_available(self, element_id, model_id):
+        if model_id == self.element_table.get_model_id(element_id) and self.model_state == ModelState.AVAILABLE:
             return True
+        else:
+            return False
 
     def get_model_chunk(self, element_id, offset: int, size: int):
         """
@@ -234,8 +239,12 @@ class ElementTable:
 
     def insert(self, element_id, element_type, architecture,  element_ip='unavailable', element_port=0,
                element_state=ElementState.WAITING):
-        new_row = pd.DataFrame([{'type': element_type, 'ip': element_ip, 'architecture': architecture,
-                                 'port': element_port, 'state': element_state}], index=[element_id])
+        new_row = pd.DataFrame([{'type': element_type,
+                                 'ip': element_ip,
+                                 'architecture': architecture,
+                                 'port': element_port,
+                                 'state': element_state,
+                                 'model_id': None}], index=[element_id])
         self.elements_table = self.elements_table.append(new_row)
 
     def get_servers_configuration(self):
@@ -266,6 +275,9 @@ class ElementTable:
     def get_element_architecture(self, element_id):
         return self.elements_table.at[element_id, 'architecture']
 
+    def get_model_id(self, element_id):
+        return self.elements_table.at[element_id, 'model_id']
+
     def set_element_state(self, element_id, state):
         print(str(self.elements_table.at[element_id, 'state']))
         self.elements_table.at[element_id, 'state'] = state
@@ -283,3 +295,7 @@ class ElementTable:
 
     def update_state_by_type(self, element_type: ElementType, state: ElementState):
         self.elements_table.loc[self.elements_table['type'] == element_type, 'state'] = state
+
+    def update_model(self, element_id, model_id):
+        self.elements_table.at[element_id, 'model_id'] = model_id
+

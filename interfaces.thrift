@@ -1,7 +1,7 @@
 /**
 *  COMMENT SECTION
 **/
-/* */
+
 enum ElementType{
     CONTROLLER = 1
     CLOUD = 2
@@ -110,12 +110,13 @@ service ControllerInterface{
     Configuration get_complete_configuration()
     ElementState get_state(1:string element_id)
     ElementState set_state(1:string element_id, 2:ElementState new_state)
-    string get_model_id()
+    string get_model_id(1:string element_id)
     FileChunk get_model_chunk(1:string element_id, 2:i64 offset, 3:i32 size)
     string register_element(1:ElementConfiguration element_configuration)
-    bool is_model_available()
+    bool is_model_available(1:string element_id, 2:string model_id)
+    void zip_model_element(1:string element_id, 2:string model_id)
     bool is_cloud_available()
-    ModelConfiguration instantiate_model(1:ModelConfiguration model_configuration)
+    string instantiate_model(1:ModelConfiguration model_configuration)
     ModelState set_model_state(1:ModelState model_state)
     void set_test(1:Test test_configuration)
     Test get_test(1:ElementType element_type)

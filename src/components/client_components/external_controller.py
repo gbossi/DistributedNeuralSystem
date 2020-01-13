@@ -14,7 +14,9 @@ class ExternalController(MasterController):
 
     def instantiate_model(self, model_name: str, split_layer: int):
         self.send_log('Controller Model Setup')
-        self.controller_interface.instantiate_model(ModelConfiguration(model_name=model_name, split_layer=split_layer))
+        gen_model_id = self.controller_interface.instantiate_model(ModelConfiguration(model_name=model_name,
+                                                                                      split_layer=split_layer))
+        return gen_model_id
 
     def set_model_state(self, state: ModelState):
         self.send_log('Changing Model State')
@@ -62,3 +64,6 @@ class ExternalController(MasterController):
             writer.write(file_chunk.data)
 
         return filename
+
+    def assign_model(self, element_id, model_id):
+        self.controller_interface.zip_model_element(element_id, model_id)

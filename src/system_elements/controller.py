@@ -13,6 +13,7 @@ class Controller:
         self.controller = ExternalController(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CONTROLLER)
         self.base_path = "./Computer/CNN"
+        self.last_model_id = None
 
     def start_system(self,
                      model_name,
@@ -40,14 +41,14 @@ class Controller:
                      edge_batch_size,
                      cloud_batch_size,
                      no_repetitions):
-        self.setup_model(model_name=model_name, split_layer=split_layer)
+        model_id = self.setup_model(model_name=model_name, split_layer=split_layer)
 
         self.controller.set_test(True, number_of_images=num_images, edge_batch_size=edge_batch_size,
                                  cloud_batch_size=cloud_batch_size)
         test_completed = 0
 
         while test_completed < no_repetitions:
-            self.check_distributed_system(num_edges)
+            self.check_distributed_system(num_edges, model_id)
             self.controller.set_system_run_state()
 
             while not self.controller.is_test_over():
@@ -77,8 +78,9 @@ class Controller:
         df.to_csv(filename,  index=False)
 
     def setup_model(self, model_name, split_layer):
-        self.controller.instantiate_model(model_name=model_name, split_layer=split_layer)
+        model_id = self.controller.instantiate_model(model_name=model_name, split_layer=split_layer)
         self.controller.set_model_state(ModelState.AVAILABLE)
+        return model_id
 
     def stop_system(self):
         self.controller.set_system_stop_state()
@@ -86,18 +88,47 @@ class Controller:
     def reset_system(self):
         self.controller.set_system_reset_state()
 
-    def check_distributed_system(self, num_edges):
+    def check_distributed_system(self, num_edges, model_id):
+        '''
+        Wait until there are a number of edge element connected greater of equal to the one requested, then assign a
+        model to the specified number of edges and finally it wait until all the edges download the model from the
+        master server and change the state into a ready
+        
+        :param num_edges: number of desired edges connected to the system
+        :param model_id: model id
+        :return:
+        '''
+
+        if self.last_model_id != model_id:
+            self.last_model_id = model_id
+            self.check_system_elements_in_state(num_edges, ElementState.WAITING)
+
+            current_config = self.controller.get_complete_configuration()
+            clients = self.controller.get_element_type_from_configuration(current_config, ElementType.CLIENT)
+            for i in range(num_edges):
+                if clients[i].state == ElementState.WAITING:
+                    self.controller.assign_model(clients[i].id, model_id)
+            clouds = self.controller.get_element_type_from_configuration(current_config, ElementType.CLOUD)
+            for cloud in clouds:
+                if cloud.state == ElementState.WAITING:
+                    self.controller.assign_model(cloud.id, model_id)
+
+        self.check_system_elements_in_state(num_edges, ElementState.READY)
+        return
+
+    def check_system_elements_in_state(self, num_edges, state):
         current_edges = 0
         exist_cloud = False
+
         while current_edges < num_edges or not exist_cloud:
             current_config = self.controller.get_complete_configuration()
             clients = self.controller.get_element_type_from_configuration(current_config, ElementType.CLIENT)
             for client in clients:
-                if client.state == ElementState.READY:
+                if client.state == state:
                     current_edges += 1
             clouds = self.controller.get_element_type_from_configuration(current_config, ElementType.CLOUD)
             for cloud in clouds:
-                if cloud.state == ElementState.READY:
+                if cloud.state == state:
                     exist_cloud = True
             time.sleep(WAITING_TIME)
 
@@ -119,5 +150,4 @@ def controller_main(master_ip, master_port, test_source):
 
 
 if __name__ == '__main__':
-    print(os.getcwd())
     controller_main('localhost', 10100, './vgg19_test_configurations.csv')
