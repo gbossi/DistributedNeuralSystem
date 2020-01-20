@@ -3,7 +3,7 @@ import os
 import csv
 import pandas as pd
 from src.components.client_components.external_controller import ExternalController
-from interfaces.ttypes import ElementType, ModelState, LogType, ElementState
+from thrift_interfaces.ttypes import ElementType, ModelState, LogType, ElementState
 
 WAITING_TIME = 5
 
@@ -104,6 +104,7 @@ class Controller:
             self.check_system_elements_in_state(num_edges, ElementState.WAITING)
 
             current_config = self.controller.get_complete_configuration()
+            print(current_config)
             clients = self.controller.get_element_type_from_configuration(current_config, ElementType.CLIENT)
             for i in range(num_edges):
                 if clients[i].state == ElementState.WAITING:

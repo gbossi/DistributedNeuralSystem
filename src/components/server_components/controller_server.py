@@ -2,11 +2,12 @@ import os
 import uuid
 import shutil
 import pandas as pd
+import tensorflow as tf
 from src.utils.model_factory import ModelFactory
 from src.utils.surgeon import Surgeon
 from pathlib import Path
-from interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
-from interfaces.ttypes import ModelState, ModelConfiguration
+from thrift_interfaces.ttypes import Configuration, ElementConfiguration, ElementType, ElementState, FileChunk, Test
+from thrift_interfaces.ttypes import ModelState, ModelConfiguration
 
 
 class ControllerInterfaceService:
@@ -58,6 +59,7 @@ class ControllerInterfaceService:
         self.server_model_path = server_base_path+server_model.name
         Path(self.server_model_path+".h5").touch()
         server_model.save(self.server_model_path+".h5")
+        tf.keras.backend.clear_session()
 
         return server_model.name[-36:]
 
@@ -106,8 +108,6 @@ class ControllerInterfaceService:
         if type == ElementType.CLOUD:
             reader = open(self.server_model_path+".h5", "rb")
 
-        print('type is ' + str(type))
-        print('architecture is '+ architecture)
         reader.seek(offset)
         data = reader.read(size)
         current_position = reader.tell()
@@ -279,9 +279,7 @@ class ElementTable:
         return self.elements_table.at[element_id, 'model_id']
 
     def set_element_state(self, element_id, state):
-        print(str(self.elements_table.at[element_id, 'state']))
         self.elements_table.at[element_id, 'state'] = state
-        print(str(self.elements_table.at[element_id, 'state']))
         return self.get_element_state(element_id)
 
     def exist_type_in_state(self, element_type: ElementType, element_state: ElementState):

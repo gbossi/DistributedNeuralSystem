@@ -27,12 +27,8 @@ test_source = args.test_source
 
 if element_type in ['edge-on-arm', 'controller'] and not (master_ip and master_port):
     parser.error('master server description is required')
-if element_type is 'controller' and test_source != 'notest' or not test_source:
-    print('no test file configuration')
+if element_type == 'controller' and not test_source:
     test_source = 'notest'
-
-print(test_source)
-
 
 if element_type == 'edge-on-arm':
     remote_edge_lite_main(master_ip, master_port)

@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from src.utils.enums import get_thrift_enum_name
-from interfaces.ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
+from thrift_interfaces.ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
 
 
 
@@ -34,7 +34,6 @@ class LogServerInterfaceService:
                                  'element_type': get_thrift_enum_name(message.element_type),
                                  'element_id': message.id,
                                  'message': message.message}])
-        print(new_row.to_string)
         self.message_table = self.message_table.append(new_row, sort=False, ignore_index=True)
 
     def log_performance_message(self, message: PerformanceMessage):
@@ -47,7 +46,6 @@ class LogServerInterfaceService:
                                  'elapsed_time': message.elapsed_time,
                                  'decoded_ids': message.decoded_ids,
                                  'output_dimension': message.output_dimension}])
-
         self.performance_table = self.performance_table.append(new_row, sort=False, ignore_index=True)
 
     def log_specs_message(self, message: SpecsMessage):

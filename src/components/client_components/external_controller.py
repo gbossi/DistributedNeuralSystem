@@ -1,5 +1,5 @@
 from src.components.client_components.master_controller import MasterController
-from interfaces.ttypes import ModelConfiguration, ModelState, Test, LogType
+from thrift_interfaces.ttypes import ModelConfiguration, ModelState, Test, LogType
 
 
 class ExternalController(MasterController):

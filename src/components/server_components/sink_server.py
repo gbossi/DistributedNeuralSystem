@@ -1,6 +1,6 @@
 import numpy as np
 from queue import Queue
-from interfaces.ttypes import Image
+from thrift_interfaces.ttypes import Image
 
 
 class SinkInterfaceService:
@@ -17,7 +17,6 @@ class SinkInterfaceService:
         if self.check_shape(image_tuple.shape[1:]):
             for i in range(number_of_images):
                 self.queue.put((image_id[i], image_data[i]))
-        print(self.queue.qsize())
 
     def get_remote_partial_result(self, batch_dim):
         id_list = []
@@ -35,7 +34,6 @@ class SinkInterfaceService:
             element = self.queue.get()
             id_list.append(element[0])
             batch_features[i] = element[1]
-        print(self.queue.qsize())
         return id_list, batch_features
 
     def check_shape(self, image_shape):
@@ -49,11 +47,11 @@ class SinkInterfaceService:
             return False
 
     def add_client(self, ext_model_id):
-        if ext_model_id == self.model_id:
+        if self.model_id is None or ext_model_id is None or ext_model_id != self.model_id:
+            return False
+        else:
             self.client_connected += 1
             return True
-        else:
-            return False
 
     def reset_sink(self, model_id):
         self.data_shape = None

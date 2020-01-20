@@ -1,10 +1,9 @@
-import sys
 import time
 import subprocess
 from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
 from thrift.transport import TSocket, TTransport
-from interfaces import ControllerInterface, LogInterface
-from interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message, SpecsMessage, Configuration
+from thrift_interfaces import ControllerInterface, LogInterface
+from thrift_interfaces.ttypes import ElementType, ElementState, ElementConfiguration, Message, SpecsMessage, Configuration
 
 
 IP_MASTER_SERVER = 'localhost'

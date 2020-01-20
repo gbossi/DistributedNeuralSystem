@@ -3,9 +3,11 @@ import os
 
 from thrift.protocol import TBinaryProtocol
 from thrift.transport import TSocket, TTransport
-from interfaces import SinkInterface
-from interfaces.ttypes import Image
+from thrift_interfaces import SinkInterface
+from thrift_interfaces.ttypes import Image
 
+NUM_RETRIES = 5
+WAITING_TIME = 1
 
 class SinkClient:
     def __init__(self, ip_address, port):
@@ -15,16 +17,15 @@ class SinkClient:
         self.server_interface = SinkInterface.Client(self.protocol)
 
     def connect_to_sink_service(self):
-        num_retries = 5
-        for attempt_no in range(num_retries):
+        for attempt_no in range(NUM_RETRIES):
             try:
                 self.buffered_transport.open()
                 return
             except TTransport.TTransportException:
                 print("Error: Cloud Server is not available \nFailed connection: "+str(attempt_no+1)
-                      +" out of "+str(num_retries)+" attempts")
-                if attempt_no < (num_retries-1):
-                    time.sleep(1)
+                      +" out of "+str(NUM_RETRIES)+" attempts")
+                if attempt_no < (NUM_RETRIES-1):
+                    time.sleep(WAITING_TIME)
                 else:
                     print("Last Attempt - Checking remote computing server on the master server")
                     self.transport = TSocket.TSocket(os.environ.get('IP_MASTER', 'Not Set'), self.transport.port)
@@ -45,11 +46,15 @@ class SinkClient:
         self.server_interface.put_partial_result(data)
 
     def register_to_sink(self, model_id):
-        #todo improve the connect to sink function, maybe using a list of available sinks
-        time.sleep(2)
-        success = self.server_interface.add_client(model_id)
-        while not success:
-            time.sleep(3)
+        for attempt_no in range(NUM_RETRIES):
             success = self.server_interface.add_client(model_id)
-        return
+            if success:
+                print("Compatible Cloud Server found")
+                return True
+            else:
+                print("Error: Cloud Server has a different or unset model \nFailed connection: "+str(attempt_no+1)
+                  +" out of "+str(NUM_RETRIES)+" attempts")
+                time.sleep(WAITING_TIME)
+        print("Maximum attempt reached. Trying to connect to a new Cloud Server")
+        return False
 

@@ -1,8 +1,9 @@
 import time
-from interfaces.ttypes import ElementState, ElementType, PerformanceMessage
+from thrift_interfaces.ttypes import ElementState, ElementType, PerformanceMessage
 from src.components.client_components.master_controller import MasterController
 
 WAITING_TIME = 5
+
 
 class InternalController(MasterController):
     def __init__(self, server_ip='localhost', port=10100):
@@ -95,7 +96,8 @@ class InternalController(MasterController):
                                  elapsed_time=elapsed_time,
                                  output_dimension=shape)
 
-    def log_performance_message_and_result(self, no_images_predicted: int, images_ids: str, elapsed_time: float, predicted: str):
+    def log_performance_message_and_result(self, no_images_predicted: int, images_ids: str, elapsed_time: float,
+                                           predicted: str):
         self.__log_performance__(no_images_predicted=no_images_predicted,
                                  images_ids=images_ids,
                                  elapsed_time=elapsed_time,
@@ -121,6 +123,3 @@ class InternalController(MasterController):
                                elapsed_time=elapsed_time,
                                decoded_ids=predicted,
                                output_dimension=output_dimension))
-
-
-

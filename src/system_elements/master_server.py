@@ -2,7 +2,7 @@ from src.utils.thrift_servers import Server, ServerType
 from src.components.server_components.controller_server import ControllerInterfaceService
 from src.components.server_components.log_server import LogServerInterfaceService
 from thrift.TMultiplexedProcessor import TMultiplexedProcessor
-from interfaces import ControllerInterface, LogInterface
+from thrift_interfaces import ControllerInterface, LogInterface
 
 
 def master_server_main(master_port=10100):

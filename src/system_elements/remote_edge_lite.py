@@ -3,12 +3,13 @@ import time
 import numpy as np
 import os
 
+from itertools import cycle
 from PIL import Image
 from tflite_runtime.interpreter import Interpreter
 from pathlib import Path
 from src.components.client_components.sink_client import SinkClient
 from src.components.client_components.internal_controller import InternalController
-from interfaces.ttypes import ElementType, ElementState
+from thrift_interfaces.ttypes import ElementType, ElementState
 
 BATCH_SIZE = 8
 NO_IMAGES = 1000
@@ -16,9 +17,14 @@ NO_IMAGES = 1000
 
 class RemoteEdge:
     def __init__(self, master_ip, port):
+        self.batch_size = BATCH_SIZE
+        self.no_images = NO_IMAGES
         os.environ['IP_MASTER'] = master_ip
         self.controller = InternalController(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
+        self.sink_client = None
+        self.interpreter = None
+        self.test = None
 
     def run(self, images_source):
         datagen = DataGenerator(images_source,
@@ -81,31 +87,22 @@ class RemoteEdge:
         model_filename = self.controller.download_model()
         self.interpreter = Interpreter(model_filename)
         self.interpreter.allocate_tensors()
-        cloud_server = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
-                                                                           ElementType.CLOUD)[0]
-        self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
-        self.sink_client.connect_to_sink_service()
-        self.sink_client.register_to_sink(self.controller.model_id)
-
+        cloud_servers = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
+                                                                            ElementType.CLOUD)
+        self.connect_to_sibling_cloud_server(cloud_servers)
         self.test = self.controller.get_test()
         if self.test.is_test:
             self.batch_size = self.test.edge_batch_size
             self.no_images = self.test.number_of_images
-        else:
-            self.batch_size = BATCH_SIZE
-            self.no_images = NO_IMAGES
 
-        if self.controller.current_state == ElementState.RUNNING:
-            self.controller.send_log("Starting a Test")
-
-        if self.controller.current_state == ElementState.RESET:
-            self.controller.send_log("Waiting a new model from master server")
-
-        if self.controller.current_state == ElementState.STOP:
-            self.controller.send_log("Shutting down the mobile device")
-
-        return self.controller.current_state
-
+    def connect_to_sibling_cloud_server(self, cloud_servers):
+        for cloud_server in cycle(cloud_servers):
+            self.sink_client = SinkClient(cloud_server.ip, cloud_server.port)
+            self.sink_client.connect_to_sink_service()
+            if self.sink_client.register_to_sink(self.controller.model_id):
+                return
+            else:
+                self.sink_client.disconnect_from_sink_service()
 
     def clean_filenames(self, filenames):
         clean_names = []
@@ -168,7 +165,8 @@ class DataGenerator:
 
 def remote_edge_lite_main(master_ip, master_port, images_source='./images_source/'):
     client = RemoteEdge(master_ip, master_port)
-    result = client.reset_values()
+    client.reset_values()
+    result = ElementState.RUNNING
     while result != ElementState.STOP:
         result = client.run(images_source)
         if result == ElementState.RESET:
