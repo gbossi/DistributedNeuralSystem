@@ -114,17 +114,19 @@ class ElementConfiguration(object):
      - id
      - state
      - architecture
+     - tensorflow_type
 
     """
 
 
-    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None,):
+    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None, tensorflow_type=None,):
         self.type = type
         self.ip = ip
         self.port = port
         self.id = id
         self.state = state
         self.architecture = architecture
+        self.tensorflow_type = tensorflow_type
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -165,6 +167,11 @@ class ElementConfiguration(object):
                     self.architecture = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 7:
+                if ftype == TType.STRING:
+                    self.tensorflow_type = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -198,6 +205,10 @@ class ElementConfiguration(object):
         if self.architecture is not None:
             oprot.writeFieldBegin('architecture', TType.STRING, 6)
             oprot.writeString(self.architecture.encode('utf-8') if sys.version_info[0] == 2 else self.architecture)
+            oprot.writeFieldEnd()
+        if self.tensorflow_type is not None:
+            oprot.writeFieldBegin('tensorflow_type', TType.STRING, 7)
+            oprot.writeString(self.tensorflow_type.encode('utf-8') if sys.version_info[0] == 2 else self.tensorflow_type)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1026,6 +1037,7 @@ ElementConfiguration.thrift_spec = (
     (4, TType.STRING, 'id', 'UTF8', None, ),  # 4
     (5, TType.I32, 'state', None, None, ),  # 5
     (6, TType.STRING, 'architecture', 'UTF8', None, ),  # 6
+    (7, TType.STRING, 'tensorflow_type', 'UTF8', None, ),  # 7
 )
 all_structs.append(ModelConfiguration)
 ModelConfiguration.thrift_spec = (

@@ -1,3 +1,4 @@
+import sys
 import time
 import subprocess
 from thrift.protocol import TBinaryProtocol, TMultiplexedProtocol
@@ -63,10 +64,24 @@ class MasterController:
         self.element_type = element_type
         command = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
         architecture = command.stdout.decode().rstrip()
+
+        if 'tensorflow' in sys.modules:
+            tensorflow_type = 'tensorflow'
+        else:
+            tensorflow_type = 'tflite_runtime'
+
         local_config = {
-            ElementType.CLOUD: ElementConfiguration(type=self.element_type, ip=server_ip, port=server_port, architecture=architecture),
-            ElementType.CLIENT: ElementConfiguration(type=self.element_type, architecture=architecture),
-            ElementType.CONTROLLER: ElementConfiguration(type=self.element_type, architecture=architecture)
+            ElementType.CLOUD: ElementConfiguration(type=self.element_type,
+                                                    ip=server_ip,
+                                                    port=server_port,
+                                                    architecture=architecture,
+                                                    tensorflow_type=tensorflow_type),
+            ElementType.CLIENT: ElementConfiguration(type=self.element_type,
+                                                     architecture=architecture,
+                                                     tensorflow_type=tensorflow_type),
+            ElementType.CONTROLLER: ElementConfiguration(type=self.element_type,
+                                                         architecture=architecture,
+                                                         tensorflow_type=tensorflow_type)
         }[self.element_type]
 
         self.element_id = self.controller_interface.register_element(local_config)

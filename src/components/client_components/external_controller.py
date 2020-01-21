@@ -28,15 +28,15 @@ class ExternalController(MasterController):
                                                 edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
     def set_system_run_state(self):
-        self.send_log('Changing the state of the elements connect to run')
+        self.send_log('Changing the state of the connected elements to run')
         self.controller_interface.run()
 
     def set_system_stop_state(self):
-        self.send_log('Changing the state of the elements connect to stop')
+        self.send_log('Changing the state of the connected elements to stop')
         self.controller_interface.stop()
 
     def set_system_reset_state(self):
-        self.send_log('Changing the state of the elements connect to reset')
+        self.send_log('Changing the state of the connected elements to reset')
         self.controller_interface.reset()
 
     def download_log(self, log_type: LogType, saving_folder: str):

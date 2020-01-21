@@ -37,6 +37,7 @@ struct ElementConfiguration{
     4:optional string id;
     5:optional ElementState state;
     6:optional string architecture;
+    7:optional string tensorflow_type;
 }
 
 struct ModelConfiguration{

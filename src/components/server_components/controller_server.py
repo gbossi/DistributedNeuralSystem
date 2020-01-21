@@ -97,11 +97,11 @@ class ControllerInterfaceService:
         """
 
         type = self.element_table.get_element_type(element_id)
-        architecture = self.element_table.get_element_architecture(element_id)
+        tensorflow_type = self.element_table.get_element_tensorflow_type(element_id)
         reader = None
 
         if type == ElementType.CLIENT:
-            if architecture == 'x86_64':
+            if tensorflow_type == 'tensorflow':
                 reader = open(self.device_model_path+".h5", "rb")
             else:
                 reader = open(self.device_model_path+".tflite", "rb")
@@ -131,16 +131,19 @@ class ControllerInterfaceService:
             self.element_table.insert(element_id,
                                       local_config.type,
                                       local_config.architecture,
+                                      local_config.tensorflow_type,
                                       local_config.ip,
                                       local_config.port)
         elif local_config.type is ElementType.CLIENT:
             self.element_table.insert(element_id,
                                       local_config.type,
-                                      local_config.architecture)
+                                      local_config.architecture,
+                                      local_config.tensorflow_type)
         elif local_config.type is ElementType.CONTROLLER:
             self.element_table.insert(element_id,
                                       local_config.type,
                                       local_config.architecture,
+                                      local_config.tensorflow_type,
                                       element_state=ElementState.RUNNING)
 
         return element_id
@@ -237,11 +240,12 @@ class ElementTable:
     def __init__(self):
         self.elements_table = pd.DataFrame()
 
-    def insert(self, element_id, element_type, architecture,  element_ip='unavailable', element_port=0,
+    def insert(self, element_id, element_type, architecture, tensorflow_type,  element_ip='unavailable', element_port=0,
                element_state=ElementState.WAITING):
         new_row = pd.DataFrame([{'type': element_type,
                                  'ip': element_ip,
                                  'architecture': architecture,
+                                 'tensorflow_type': tensorflow_type,
                                  'port': element_port,
                                  'state': element_state,
                                  'model_id': None}], index=[element_id])
@@ -259,11 +263,13 @@ class ElementTable:
     def get_complete_configuration(self):
         elements_configurations = []
         for element in self.elements_table.itertuples():
-            elements_configurations += [ElementConfiguration(type=getattr(element, 'type'),
+            elements_configurations += [ElementConfiguration(id=element.Index,
+                                                             type=getattr(element, 'type'),
                                                              ip=getattr(element, 'ip'),
                                                              port=getattr(element, 'port'),
-                                                             id=element.Index,
-                                                             state=getattr(element, 'state'))]
+                                                             state=getattr(element, 'state'),
+                                                             architecture=getattr(element, 'architecture'),
+                                                             tensorflow_type=getattr(element, 'tensorflow_type'))]
         return elements_configurations
 
     def get_element_state(self, element_id):
@@ -272,8 +278,8 @@ class ElementTable:
     def get_element_type(self, element_id):
         return self.elements_table.at[element_id, 'type']
 
-    def get_element_architecture(self, element_id):
-        return self.elements_table.at[element_id, 'architecture']
+    def get_element_tensorflow_type(self, element_id):
+        return self.elements_table.at[element_id, 'tensorflow_type']
 
     def get_model_id(self, element_id):
         return self.elements_table.at[element_id, 'model_id']
