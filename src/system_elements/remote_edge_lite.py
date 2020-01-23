@@ -1,5 +1,6 @@
 import random
 import time
+import uuid
 import numpy as np
 import os
 
@@ -104,10 +105,10 @@ class RemoteEdge:
             else:
                 self.sink_client.disconnect_from_sink_service()
 
-    def clean_filenames(self, filenames):
+    def unique_filenames(self, filenames):
         clean_names = []
         for file in filenames:
-            clean_names = clean_names+[self.controller.element_id+"-"+Path(file).name]
+            clean_names = clean_names+[uuid.uuid4().hex+"-"+Path(file).name]
         return clean_names
 
 

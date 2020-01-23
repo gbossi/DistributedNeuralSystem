@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import os
+import uuid
 import tensorflow as tf
 
 from itertools import cycle
@@ -57,7 +58,7 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = next(datagen)
-            filenames = self.clean_filenames(filenames)
+            filenames = self.unique_filenames(filenames)
             start = time.time()
             predicted = self.edge_model.predict(data_batch)
             end = time.time()
@@ -74,7 +75,7 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = next(datagen)
-            filenames = self.clean_filenames(filenames)
+            filenames = self.unique_filenames(filenames)
             start = time.time()
             predicted = self.edge_model.predict(data_batch)
             end = time.time()
@@ -104,10 +105,10 @@ class RemoteEdge:
             else:
                 self.sink_client.disconnect_from_sink_service()
 
-    def clean_filenames(self, filenames):
+    def unique_filenames(self, filenames):
         clean_names = []
         for file in filenames:
-            clean_names = clean_names+[self.controller.element_id+"-"+Path(file).name]
+            clean_names = clean_names+[uuid.uuid4().hex+"-"+Path(file).name]
         return clean_names
 
 
