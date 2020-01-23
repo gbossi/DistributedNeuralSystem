@@ -57,7 +57,7 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = datagen.get_batch()
-            filenames = self.clean_filenames(filenames)
+            filenames = self.unique_filenames(filenames)
             start = time.time()
             predicted = predict_batch(self.interpreter, data_batch)
             end = time.time()
@@ -75,7 +75,7 @@ class RemoteEdge:
 
         while self.controller.update_state() == ElementState.RUNNING:
             data_batch, filenames = datagen.get_batch()
-            filenames = self.clean_filenames(filenames)
+            filenames = self.unique_filenames(filenames)
             start = time.time()
             predicted = predict_batch(self.interpreter, data_batch)
             end = time.time()
