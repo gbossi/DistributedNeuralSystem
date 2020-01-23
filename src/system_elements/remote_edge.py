@@ -115,7 +115,7 @@ class RemoteEdge:
 class DataGenerator(DirectoryIterator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filenames_np = np.array(self.filepaths)
+        self.filenames_np = np.array(self.filenames)
         self.class_mode = None
 
     def _get_batches_of_transformed_samples(self, index_array):
