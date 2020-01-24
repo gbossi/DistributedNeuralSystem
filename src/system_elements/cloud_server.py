@@ -115,10 +115,10 @@ class CloudServer:
         return decoded
 
     def reset_values(self):
+        tf.keras.backend.clear_session()
         self.controller.set_state(ElementState.WAITING)
         model_filename = self.controller.download_model()
         self.sink.reset_sink(self.controller.model_id)
-        tf.keras.backend.clear_session()
         self.cloud_model = tf.keras.models.load_model(model_filename)
         self.test = self.controller.get_test()
         if self.test.is_test:

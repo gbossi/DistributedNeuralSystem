@@ -30,7 +30,7 @@ class RemoteEdge:
         datagen = DataGenerator(images_source,
                                 ImageDataGenerator(),
                                 batch_size=self.batch_size,
-                                target_size=tuple(self.edge_model.layers[1].input_shape[1:3]),
+                                target_size=tuple(self.edge_model.layers[0].input_shape[0][1:3]),
                                 interpolation="nearest")
 
         if self.test.is_test:
@@ -88,8 +88,8 @@ class RemoteEdge:
         model_filename = self.controller.download_model()
         tf.keras.backend.clear_session()
         self.edge_model = tf.keras.models.load_model(model_filename)
-        cloud_servers = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
-                                                                            ElementType.CLOUD)
+        cloud_servers = self.controller.filter_elements_from_configuration(self.controller.get_servers_configuration(),
+                                                                           ElementType.CLOUD)
         self.connect_to_sibling_cloud_server(cloud_servers)
         self.test = self.controller.get_test()
         if self.test.is_test:

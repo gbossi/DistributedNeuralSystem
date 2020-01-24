@@ -38,6 +38,7 @@ struct ElementConfiguration{
     5:optional ElementState state;
     6:optional string architecture;
     7:optional string tensorflow_type;
+    8:optional string model_id;
 }
 
 struct ModelConfiguration{
@@ -123,9 +124,6 @@ service ControllerInterface{
     Test get_test(1:ElementType element_type)
     void test_completed()
     bool is_test_over()
-    void run()
-    void reset()
-    void stop()
 }
 
 service LogInterface{

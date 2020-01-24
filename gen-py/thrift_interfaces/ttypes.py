@@ -115,11 +115,12 @@ class ElementConfiguration(object):
      - state
      - architecture
      - tensorflow_type
+     - model_id
 
     """
 
 
-    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None, tensorflow_type=None,):
+    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None, tensorflow_type=None, model_id=None,):
         self.type = type
         self.ip = ip
         self.port = port
@@ -127,6 +128,7 @@ class ElementConfiguration(object):
         self.state = state
         self.architecture = architecture
         self.tensorflow_type = tensorflow_type
+        self.model_id = model_id
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -172,6 +174,11 @@ class ElementConfiguration(object):
                     self.tensorflow_type = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 8:
+                if ftype == TType.STRING:
+                    self.model_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -209,6 +216,10 @@ class ElementConfiguration(object):
         if self.tensorflow_type is not None:
             oprot.writeFieldBegin('tensorflow_type', TType.STRING, 7)
             oprot.writeString(self.tensorflow_type.encode('utf-8') if sys.version_info[0] == 2 else self.tensorflow_type)
+            oprot.writeFieldEnd()
+        if self.model_id is not None:
+            oprot.writeFieldBegin('model_id', TType.STRING, 8)
+            oprot.writeString(self.model_id.encode('utf-8') if sys.version_info[0] == 2 else self.model_id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1038,6 +1049,7 @@ ElementConfiguration.thrift_spec = (
     (5, TType.I32, 'state', None, None, ),  # 5
     (6, TType.STRING, 'architecture', 'UTF8', None, ),  # 6
     (7, TType.STRING, 'tensorflow_type', 'UTF8', None, ),  # 7
+    (8, TType.STRING, 'model_id', 'UTF8', None, ),  # 8
 )
 all_structs.append(ModelConfiguration)
 ModelConfiguration.thrift_spec = (

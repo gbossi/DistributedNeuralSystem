@@ -57,7 +57,8 @@ class InternalController(MasterController):
 
     def download_model(self):
         self.send_log('Waiting for a new model')
-        model_set = False
+        self.model_id = self.controller_interface.get_model_id(self.element_id)
+        model_set = self.controller_interface.is_model_available(self.element_id, self.model_id)
         while not model_set:
             self.model_id = self.controller_interface.get_model_id(self.element_id)
             model_set = self.controller_interface.is_model_available(self.element_id, self.model_id)

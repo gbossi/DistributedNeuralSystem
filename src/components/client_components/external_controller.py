@@ -27,18 +27,6 @@ class ExternalController(MasterController):
         self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
                                                 edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
 
-    def set_system_run_state(self):
-        self.send_log('Changing the state of the connected elements to run')
-        self.controller_interface.run()
-
-    def set_system_stop_state(self):
-        self.send_log('Changing the state of the connected elements to stop')
-        self.controller_interface.stop()
-
-    def set_system_reset_state(self):
-        self.send_log('Changing the state of the connected elements to reset')
-        self.controller_interface.reset()
-
     def download_log(self, log_type: LogType, saving_folder: str):
         self.send_log('Downloading all the logs')
         self.logger_interface.prepare_log(log_type=log_type)
@@ -67,3 +55,6 @@ class ExternalController(MasterController):
 
     def assign_model(self, element_id, model_id):
         self.controller_interface.zip_model_element(element_id, model_id)
+
+    def assign_state(self, element_id, element_state):
+        self.controller_interface.set_state(element_id, element_state)

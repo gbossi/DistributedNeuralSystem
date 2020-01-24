@@ -65,8 +65,8 @@ class ControllerInterfaceService:
 
     def get_model_id(self, element_id):
         model_id = self.element_table.get_model_id(element_id)
-        if model_id is None:
-            return 'model_not_set'
+        if model_id == 'NO_MODEL' or model_id is None:
+            return 'MODEL NOT AVAILABLE'
         else:
             return model_id
 
@@ -79,7 +79,7 @@ class ControllerInterfaceService:
         return self.model_state
 
     def is_model_available(self, element_id, model_id):
-        if model_id == self.element_table.get_model_id(element_id) and self.model_state == ModelState.AVAILABLE:
+        if model_id == self.element_table.get_model_id(element_id):
             return True
         else:
             return False
@@ -158,26 +158,6 @@ class ControllerInterfaceService:
         self.element_table.set_element_state(element_id, state)
         return self.get_state(element_id=element_id)
 
-    # --------- SYSTEM STATE HANDLING SECTION --------- #
-
-    def run(self):
-        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RUNNING)
-        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RUNNING)
-
-    def wait(self):
-        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.WAITING)
-        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.WAITING)
-
-    def stop(self):
-        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.STOP)
-        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.STOP)
-
-    def reset(self):
-        self.model_state = ModelState.DIRT
-        self.test_settings = None
-        self.element_table.update_state_by_type(ElementType.CLIENT, ElementState.RESET)
-        self.element_table.update_state_by_type(ElementType.CLOUD, ElementState.RESET)
-
     # --------- CONFIGURATION HANDLING SECTION --------- #
 
     def get_servers_configuration(self):
@@ -189,8 +169,6 @@ class ControllerInterfaceService:
     # --------- TEST CONFIGURATION SECTION ------------- #
 
     def set_test(self, settings):
-        if self.test_settings is not None:
-            self.reset()
         self.test_settings = TestSettings(test=settings)
 
     def get_test(self, element_type: ElementType):
@@ -269,7 +247,8 @@ class ElementTable:
                                                              port=getattr(element, 'port'),
                                                              state=getattr(element, 'state'),
                                                              architecture=getattr(element, 'architecture'),
-                                                             tensorflow_type=getattr(element, 'tensorflow_type'))]
+                                                             tensorflow_type=getattr(element, 'tensorflow_type'),
+                                                             model_id = getattr(element, 'model_id'))]
         return elements_configurations
 
     def get_element_state(self, element_id):

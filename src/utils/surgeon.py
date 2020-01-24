@@ -15,7 +15,10 @@ class Surgeon:
         m_input = tf.keras.Input(input_shape)
         model_layers = m_input
         for layer in model.layers[split_layer:]:
-            model_layers = layer(model_layers)
+            try:
+                model_layers = layer(model_layers)
+            except:
+                raise
 
         # Give a unique name that contains the information of the models
         modelA = tf.keras.Model(inputs=model.input, outputs=model.layers[split_layer-1].output,

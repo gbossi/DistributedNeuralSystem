@@ -88,8 +88,8 @@ class RemoteEdge:
         model_filename = self.controller.download_model()
         self.interpreter = Interpreter(model_filename)
         self.interpreter.allocate_tensors()
-        cloud_servers = self.controller.get_element_type_from_configuration(self.controller.get_servers_configuration(),
-                                                                            ElementType.CLOUD)
+        cloud_servers = self.controller.filter_elements_from_configuration(self.controller.get_servers_configuration(),
+                                                                           ElementType.CLOUD)
         self.connect_to_sibling_cloud_server(cloud_servers)
         self.test = self.controller.get_test()
         if self.test.is_test:

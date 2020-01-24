@@ -10,7 +10,7 @@ class ModelFactory:
             filename = './.keras/models/mobilenet.h5'
         elif model_name == "VGG19":
             filename = './.keras/models/vgg19.h5'
-        elif model_name == "ResNet":
+        elif model_name == "ResNet50":
             filename = './.keras/models/resnet50.h5'
         elif model_name == "Yolo":
             filename = './.keras/models/yolo_v3.h5'

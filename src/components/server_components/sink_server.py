@@ -47,6 +47,8 @@ class SinkInterfaceService:
             return False
 
     def add_client(self, ext_model_id):
+        print(self.model_id)
+        print(ext_model_id)
         if self.model_id is None or ext_model_id is None or ext_model_id != self.model_id:
             return False
         else:

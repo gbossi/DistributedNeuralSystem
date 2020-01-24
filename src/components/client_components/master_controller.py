@@ -43,11 +43,18 @@ class MasterController:
         self.transport.close()
 
     @staticmethod
-    def get_element_type_from_configuration(remote_configuration: Configuration, type: ElementType):
+    def filter_elements_from_configuration(remote_configuration: Configuration, type: ElementType):
         elements = []
         for element in remote_configuration.elements_configuration:
             if type == element.type:
                 elements = elements + [element]
+        return elements
+
+    @staticmethod
+    def get_elements_from_configuration(remote_configuration: Configuration):
+        elements = []
+        for element in remote_configuration.elements_configuration:
+            elements = elements + [element]
         return elements
 
     def register_element(self, element_type: ElementType, server_ip="localhost", server_port=0):
