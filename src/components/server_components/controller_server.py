@@ -14,7 +14,6 @@ class ControllerInterfaceService:
     def __init__(self):
         self.device_model_path = None
         self.server_model_path = None
-        self.model_state = ModelState.UNSET
         self.element_table = ElementTable()
         self.model_factory = ModelFactory()
         self.surgeon = Surgeon()
@@ -73,10 +72,6 @@ class ControllerInterfaceService:
     def zip_model_element(self, element_id, model_id):
         self.element_table.update_model(element_id, model_id)
         return
-
-    def set_model_state(self, model_state: ModelState):
-        self.model_state = model_state
-        return self.model_state
 
     def is_model_available(self, element_id, model_id):
         if model_id == self.element_table.get_model_id(element_id):

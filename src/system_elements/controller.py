@@ -25,7 +25,6 @@ class Controller:
                      time_limit):
 
         model_id = self.controller.instantiate_model(model_name=model_name, split_layer=split_layer)
-        self.controller.set_model_state(ModelState.AVAILABLE)
 
         self.controller.set_test(False, number_of_images=0, edge_batch_size=0,
                                  cloud_batch_size=0)
@@ -160,6 +159,7 @@ def controller_main(master_ip, master_port, test_source):
                                     edge_batch_size=int(row['edge_batch_size']),
                                     cloud_batch_size=int(row['cloud_batch_size']),
                                     no_repetitions=int(row['no_repetitions']))
+
             controller.reset_system(controller.current_model_id)
     controller.stop_system(controller.current_model_id)
 

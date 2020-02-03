@@ -62,7 +62,6 @@ struct Image{
     2:binary arr_bytes;
     3:string data_type;
     4:list<i16> shape;
-    5:optional bool last;
 }
 
 struct FileChunk {
@@ -119,7 +118,6 @@ service ControllerInterface{
     void zip_model_element(1:string element_id, 2:string model_id)
     bool is_cloud_available()
     string instantiate_model(1:ModelConfiguration model_configuration)
-    ModelState set_model_state(1:ModelState model_state)
     void set_test(1:Test test_configuration)
     Test get_test(1:ElementType element_type)
     void test_completed()

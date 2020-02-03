@@ -1,0 +1,54 @@
+import argparse
+import subprocess
+
+parser = argparse.ArgumentParser(description='welcome')
+parser.add_argument('--tfversion', '-tfv', choices=['lite', 'normal'],
+                    help='specify the version of the app you want to use "')
+
+args = parser.parse_args()
+tfversion = args.tfversion
+
+command = subprocess.run(['apt-get', 'install', 'lshw', 'libjpeg-dev', '-y'], stdout=subprocess.PIPE)
+print(command.stdout.decode().rstrip())
+
+command = subprocess.run(['uname', '-p'], stdout=subprocess.PIPE)
+architecture = command.stdout.decode().rstrip()
+
+if "x86_64" in architecture or "aarch64" in architecture or "armv7l" in architecture:
+    print("Processor "+architecture+" supported")
+else:
+    print("Processors not supported")
+    exit()
+
+command = subprocess.run(['python3', '-V'], stdout=subprocess.PIPE)
+python_version = command.stdout.decode().rstrip()
+
+version = ""
+
+if "3.6" in python_version:
+    version = "cp36-cp36m"
+elif "3.7" in python_version:
+    version = "cp37-cp37m"
+else:
+    print("Python version not supported")
+    exit()
+
+print("Python version "+version+" supported")
+
+
+tensorflow_lite = "https://dl.google.com/coral/python/tflite_runtime-2.1.0-"+version+"-linux_"+architecture+".whl"
+
+
+print("Installing Python dependencies")
+if tfversion == 'lite':
+    print("Tensorflow Lite Version selected")
+    subprocess.run(['python3', '-m', 'pip', 'install', '-r', './setup/tensorflow_lite_version_requirements.txt'],
+                   stdout=subprocess.PIPE)
+    subprocess.run(['python3', '-m', 'pip', 'install', 'install', tensorflow_lite], stdout=subprocess.PIPE)
+else:
+    print("Tensorflow Version selected")
+    if architecture == "aarch64":
+        print("Tensorflow compilation not granted. An error can occur.")
+    subprocess.run(['python3', '-m', 'pip', 'install', '-r', './setup/tensorflow_version_requirements.txt'], stdout=subprocess.PIPE)
+
+

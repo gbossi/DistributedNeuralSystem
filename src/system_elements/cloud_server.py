@@ -10,6 +10,7 @@ from src.components.server_components.sink_server import SinkInterfaceService
 from thrift_interfaces import SinkInterface
 from thrift_interfaces.ttypes import ElementType, ElementState
 
+WAITING_TIME = 0.1
 BATCH_SIZE = 8
 NO_IMAGES = 1000
 SINK_PORT = 20200
@@ -82,7 +83,7 @@ class CloudServer:
                 remaining_batch = self.batch_size
                 test_started = True
             else:
-                time.sleep(3)
+                time.sleep(WAITING_TIME)
                 if test_started:
                     current_size = self.sink.queue.qsize()
                     remaining_batch = current_size if current_size > 0 else self.batch_size
@@ -103,7 +104,7 @@ class CloudServer:
                 self.controller.log_performance_message(self.batch_size, images_ids=id_list, elapsed_time=end-start)
                 remaining_batch = self.batch_size
             else:
-                time.sleep(3)
+                time.sleep(WAITING_TIME)
                 current_size = self.sink.queue.qsize()
                 remaining_batch = current_size if current_size > 0 else self.batch_size
 
