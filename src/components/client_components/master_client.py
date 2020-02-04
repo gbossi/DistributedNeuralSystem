@@ -11,7 +11,7 @@ IP_MASTER_SERVER = 'localhost'
 PORT_MASTER_SERVER = 10100
 
 
-class MasterController:
+class MasterClient:
     def __init__(self, server_ip, port):
         self.socket = TSocket.TSocket(server_ip, port)
         self.transport = TTransport.TBufferedTransport(self.socket)
@@ -22,6 +22,7 @@ class MasterController:
         self.logger_interface = LogInterface.Client(self.log_proto)
         self.element_type = None
         self.element_id = None
+        self.test_id = None
         self.current_state = ElementState.WAITING
         self.connect_to_master_server()
 
@@ -116,7 +117,7 @@ class MasterController:
                                                                  message))
 
     def is_test_over(self):
-        return self.controller_interface.is_test_over()
+        return self.controller_interface.is_test_over(self.test_id)
 
     def send_log(self, message: str):
         print(message)

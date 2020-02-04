@@ -3,13 +3,12 @@ import uuid
 
 
 class Surgeon:
-
     def split(self, model, split_layer: int):
         """ Given a model or a location in the filesystem
          and a point inside the network where to split
         the neural network, return two neural networks"""
 
-        model = self.check_model(model)
+        self.check_model(model)
         assert isinstance(model, tf.keras.Model)
         input_shape = model.layers[split_layer].input_shape[1:]
         m_input = tf.keras.Input(input_shape)
@@ -20,16 +19,18 @@ class Surgeon:
             except:
                 raise
 
+        model_id = str(uuid.uuid1())
+
         # Give a unique name that contains the information of the models
         modelA = tf.keras.Model(inputs=model.input, outputs=model.layers[split_layer-1].output,
-                                trainable=False, name=model.name+"_0-"+str(split_layer)+"_"+str(uuid.uuid1()))
+                                trainable=False, name=model.name+"_0-"+str(split_layer)+"_"+model_id)
         modelA.compile(tf.keras.optimizers.RMSprop(lr=2e-4), loss='categorical_crossentropy', metrics=['acc'])
 
         modelB = tf.keras.Model(inputs=m_input, outputs=model_layers,
                                 trainable=False, name=model.name+"_"+str(split_layer)+"-"+
-                                                      str(len(model.layers))+"_"+str(uuid.uuid1()))
+                                                      str(len(model.layers))+"_"+model_id)
         modelB.compile(tf.keras.optimizers.RMSprop(lr=2e-4), loss='categorical_crossentropy', metrics=['acc'])
-        return modelA, modelB
+        return modelA, modelB, model_id
 
     def merge(self, modelA, modelB, merge_layer: int, is_trainable=False):
         """ Given two previously concatenated model
@@ -84,7 +85,6 @@ class Surgeon:
             model = tf.keras.model.load_model(model)
         if not isinstance(model, tf.keras.Model):
             raise Exception("Not keras compatible model")
-        return model
 
     def convert_model(self, model):
         converter = tf.lite.TFLiteConverter.from_keras_model(model)

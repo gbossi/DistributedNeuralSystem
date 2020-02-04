@@ -18,12 +18,6 @@ enum ElementState{
     READY = 15
 }
 
-enum ModelState{
-    UNSET
-    AVAILABLE
-    DIRT
-}
-
 enum LogType{
     MESSAGE = 0
     PERFORMANCE = 1
@@ -39,6 +33,7 @@ struct ElementConfiguration{
     6:optional string architecture;
     7:optional string tensorflow_type;
     8:optional string model_id;
+    9:optional string test_id;
 }
 
 struct ModelConfiguration{
@@ -118,10 +113,12 @@ service ControllerInterface{
     void zip_model_element(1:string element_id, 2:string model_id)
     bool is_cloud_available()
     string instantiate_model(1:ModelConfiguration model_configuration)
-    void set_test(1:Test test_configuration)
-    Test get_test(1:ElementType element_type)
-    void test_completed()
-    bool is_test_over()
+    string set_test(1:Test test_configuration)
+    void zip_test_element(1:string element_id, 2:string test_id)
+    string get_test_id(1:string element_id)
+    Test get_test(1:string test_id)
+    void test_completed(1:string test_id)
+    bool is_test_over(1:string test_id)
 }
 
 service LogInterface{

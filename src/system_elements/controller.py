@@ -2,15 +2,15 @@ import time
 import os
 import csv
 import pandas as pd
-from src.components.client_components.external_controller import ExternalController
-from thrift_interfaces.ttypes import ElementType, ModelState, LogType, ElementState
+from src.components.client_components.external_master_client import ExternalClient
+from thrift_interfaces.ttypes import ElementType, LogType, ElementState
 
 WAITING_TIME = 5
 
 
 class Controller:
     def __init__(self, master_ip, master_port):
-        self.controller = ExternalController(server_ip=master_ip, port=master_port)
+        self.controller = ExternalClient(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CONTROLLER)
         self.base_path = "./Computer/CNN"
         self.last_model_id = None
@@ -30,10 +30,11 @@ class Controller:
                                  cloud_batch_size=0)
 
         self.check_distributed_system(num_edges, model_id)
+        self.start_system()
 
         time.sleep(time_limit)
 
-        self.stop_system(model_id)
+        self.stop_system()
 
     def perform_test(self,
                      model_name,
@@ -52,7 +53,7 @@ class Controller:
 
         while test_completed < no_repetitions:
             self.check_distributed_system(num_edges, self.current_model_id)
-            self.run_system(self.current_model_id)
+            self.run_system()
 
             while not self.controller.is_test_over():
                 time.sleep(WAITING_TIME)
@@ -81,23 +82,24 @@ class Controller:
         df["encoding"] = encoding
         df.to_csv(filename,  index=False)
 
-    def stop_system(self, model_id):
+    def stop_system(self):
         elements = self.controller.get_elements_from_configuration(self.controller.get_complete_configuration())
         for element in elements:
-            if model_id == element.model_id:
+            if self.controller.test_id == element.test_id:
                 self.controller.assign_state(element.id, ElementState.STOP)
 
-    def reset_system(self, model_id):
+    def reset_system(self):
         elements = self.controller.get_elements_from_configuration(self.controller.get_complete_configuration())
         for element in elements:
-            if model_id == element.model_id:
-                self.controller.assign_model(element.id, 'NO_MODEL')
+            if self.controller.test_id == element.test_id:
+                self.controller.reset_model(element.id)
+                self.controller.reset_test(element.id)
                 self.controller.assign_state(element.id, ElementState.RESET)
 
-    def run_system(self, model_id):
+    def run_system(self):
         elements = self.controller.get_elements_from_configuration(self.controller.get_complete_configuration())
         for element in elements:
-            if model_id == element.model_id:
+            if self.controller.test_id == element.test_id:
                 self.controller.assign_state(element.id, ElementState.RUNNING)
 
 
@@ -121,10 +123,12 @@ class Controller:
             clients = self.controller.filter_elements_from_configuration(current_config, ElementType.CLIENT)
             for i in range(num_edges):
                 if clients[i].state == ElementState.WAITING:
+                    self.controller.assign_test(clients[i].id)
                     self.controller.assign_model(clients[i].id, model_id)
             clouds = self.controller.filter_elements_from_configuration(current_config, ElementType.CLOUD)
             for cloud in clouds:
                 if cloud.state == ElementState.WAITING:
+                    self.controller.assign_test(cloud.id)
                     self.controller.assign_model(cloud.id, model_id)
 
         self.check_system_elements_in_state(num_edges, ElementState.READY)
@@ -160,8 +164,8 @@ def controller_main(master_ip, master_port, test_source):
                                     cloud_batch_size=int(row['cloud_batch_size']),
                                     no_repetitions=int(row['no_repetitions']))
 
-            controller.reset_system(controller.current_model_id)
-    controller.stop_system(controller.current_model_id)
+            controller.reset_system()
+    controller.stop_system()
 
 
 if __name__ == '__main__':

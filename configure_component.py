@@ -44,11 +44,11 @@ if tfversion == 'lite':
     print("Tensorflow Lite Version selected")
     subprocess.run(['python3', '-m', 'pip', 'install', '-r', './setup/tensorflow_lite_version_requirements.txt'],
                    stdout=subprocess.PIPE)
-    subprocess.run(['python3', '-m', 'pip', 'install', 'install', tensorflow_lite], stdout=subprocess.PIPE)
+    subprocess.run(['python3', '-m', 'pip', 'install', tensorflow_lite], stdout=subprocess.PIPE)
 else:
     print("Tensorflow Version selected")
     if architecture == "aarch64":
         print("Tensorflow compilation not granted. An error can occur.")
     subprocess.run(['python3', '-m', 'pip', 'install', '-r', './setup/tensorflow_version_requirements.txt'], stdout=subprocess.PIPE)
 
-
+print("Installation procedure complete")

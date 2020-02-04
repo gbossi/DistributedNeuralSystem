@@ -10,7 +10,7 @@ from thrift_interfaces.ttypes import Message, PerformanceMessage, LogType, FileC
 
 
 
-class LogServerInterfaceService:
+class LogInterfaceService:
     def __init__(self):
         base_path = "./logs/"
         if not os.path.exists(base_path):

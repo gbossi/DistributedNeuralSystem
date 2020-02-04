@@ -69,24 +69,6 @@ class ElementState(object):
     }
 
 
-class ModelState(object):
-    UNSET = 0
-    AVAILABLE = 1
-    DIRT = 2
-
-    _VALUES_TO_NAMES = {
-        0: "UNSET",
-        1: "AVAILABLE",
-        2: "DIRT",
-    }
-
-    _NAMES_TO_VALUES = {
-        "UNSET": 0,
-        "AVAILABLE": 1,
-        "DIRT": 2,
-    }
-
-
 class LogType(object):
     MESSAGE = 0
     PERFORMANCE = 1
@@ -116,11 +98,12 @@ class ElementConfiguration(object):
      - architecture
      - tensorflow_type
      - model_id
+     - test_id
 
     """
 
 
-    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None, tensorflow_type=None, model_id=None,):
+    def __init__(self, type=None, ip=None, port=None, id=None, state=None, architecture=None, tensorflow_type=None, model_id=None, test_id=None,):
         self.type = type
         self.ip = ip
         self.port = port
@@ -129,6 +112,7 @@ class ElementConfiguration(object):
         self.architecture = architecture
         self.tensorflow_type = tensorflow_type
         self.model_id = model_id
+        self.test_id = test_id
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -179,6 +163,11 @@ class ElementConfiguration(object):
                     self.model_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
                 else:
                     iprot.skip(ftype)
+            elif fid == 9:
+                if ftype == TType.STRING:
+                    self.test_id = iprot.readString().decode('utf-8') if sys.version_info[0] == 2 else iprot.readString()
+                else:
+                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -220,6 +209,10 @@ class ElementConfiguration(object):
         if self.model_id is not None:
             oprot.writeFieldBegin('model_id', TType.STRING, 8)
             oprot.writeString(self.model_id.encode('utf-8') if sys.version_info[0] == 2 else self.model_id)
+            oprot.writeFieldEnd()
+        if self.test_id is not None:
+            oprot.writeFieldBegin('test_id', TType.STRING, 9)
+            oprot.writeString(self.test_id.encode('utf-8') if sys.version_info[0] == 2 else self.test_id)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -470,17 +463,15 @@ class Image(object):
      - arr_bytes
      - data_type
      - shape
-     - last
 
     """
 
 
-    def __init__(self, id=None, arr_bytes=None, data_type=None, shape=None, last=None,):
+    def __init__(self, id=None, arr_bytes=None, data_type=None, shape=None,):
         self.id = id
         self.arr_bytes = arr_bytes
         self.data_type = data_type
         self.shape = shape
-        self.last = last
 
     def read(self, iprot):
         if iprot._fast_decode is not None and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None:
@@ -521,11 +512,6 @@ class Image(object):
                     iprot.readListEnd()
                 else:
                     iprot.skip(ftype)
-            elif fid == 5:
-                if ftype == TType.BOOL:
-                    self.last = iprot.readBool()
-                else:
-                    iprot.skip(ftype)
             else:
                 iprot.skip(ftype)
             iprot.readFieldEnd()
@@ -557,10 +543,6 @@ class Image(object):
             for iter20 in self.shape:
                 oprot.writeI16(iter20)
             oprot.writeListEnd()
-            oprot.writeFieldEnd()
-        if self.last is not None:
-            oprot.writeFieldBegin('last', TType.BOOL, 5)
-            oprot.writeBool(self.last)
             oprot.writeFieldEnd()
         oprot.writeFieldStop()
         oprot.writeStructEnd()
@@ -1050,6 +1032,7 @@ ElementConfiguration.thrift_spec = (
     (6, TType.STRING, 'architecture', 'UTF8', None, ),  # 6
     (7, TType.STRING, 'tensorflow_type', 'UTF8', None, ),  # 7
     (8, TType.STRING, 'model_id', 'UTF8', None, ),  # 8
+    (9, TType.STRING, 'test_id', 'UTF8', None, ),  # 9
 )
 all_structs.append(ModelConfiguration)
 ModelConfiguration.thrift_spec = (
@@ -1077,7 +1060,6 @@ Image.thrift_spec = (
     (2, TType.STRING, 'arr_bytes', 'BINARY', None, ),  # 2
     (3, TType.STRING, 'data_type', 'UTF8', None, ),  # 3
     (4, TType.LIST, 'shape', (TType.I16, None, False), None, ),  # 4
-    (5, TType.BOOL, 'last', None, None, ),  # 5
 )
 all_structs.append(FileChunk)
 FileChunk.thrift_spec = (

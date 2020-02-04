@@ -4,8 +4,8 @@ import tensorflow as tf
 
 from src.utils.thrift_servers import Server, ServerType
 from tensorflow.keras.applications.imagenet_utils import decode_predictions
-from src.components.client_components.internal_controller import InternalController
-from src.components.server_components.sink_server import SinkInterfaceService
+from src.components.client_components.internal_master_client import InternalClient
+from src.components.server_components.sink_handler import SinkInterfaceService
 
 from thrift_interfaces import SinkInterface
 from thrift_interfaces.ttypes import ElementType, ElementState
@@ -39,7 +39,7 @@ class CloudServer:
     def __init__(self, master_ip, master_port, sink: SinkInterfaceService, server):
         self.no_images = NO_IMAGES
         self.batch_size = BATCH_SIZE
-        self.controller = InternalController(server_ip=master_ip, port=master_port)
+        self.controller = InternalClient(server_ip=master_ip, port=master_port)
         self.controller.register_element(ElementType.CLOUD, server_ip=server.ip, server_port=server.port)
         self.sink = sink
         self.cloud_model = None

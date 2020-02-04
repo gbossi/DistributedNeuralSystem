@@ -1,10 +1,10 @@
-from src.components.client_components.master_controller import MasterController
-from thrift_interfaces.ttypes import ModelConfiguration, ModelState, Test, LogType
+from src.components.client_components.master_client import MasterClient
+from thrift_interfaces.ttypes import ModelConfiguration, Test, LogType
 
 
-class ExternalController(MasterController):
-    def __init__(self, server_ip='localhost', port=10100):
-        super(ExternalController, self).__init__(server_ip, port)
+class ExternalClient(MasterClient):
+    def __init__(self, server_ip, port):
+        super(ExternalClient, self).__init__(server_ip, port)
 
     def get_complete_configuration(self):
         """
@@ -18,14 +18,13 @@ class ExternalController(MasterController):
                                                                                       split_layer=split_layer))
         return gen_model_id
 
-    def set_model_state(self, state: ModelState):
-        self.send_log('Changing Model State')
-        return self.controller_interface.set_model_state(model_state=state)
 
     def set_test(self, is_test: bool, number_of_images: int, edge_batch_size: int, cloud_batch_size: int):
         self.send_log('Setting a new test')
-        self.controller_interface.set_test(Test(is_test=is_test, number_of_images=number_of_images,
-                                                edge_batch_size=edge_batch_size, cloud_batch_size=cloud_batch_size))
+        self.test_id = self.controller_interface.set_test(Test(is_test=is_test,
+                                                               number_of_images=number_of_images,
+                                                               edge_batch_size=edge_batch_size,
+                                                               cloud_batch_size=cloud_batch_size))
 
     def download_log(self, log_type: LogType, saving_folder: str):
         self.send_log('Downloading all the logs')
@@ -55,6 +54,15 @@ class ExternalController(MasterController):
 
     def assign_model(self, element_id, model_id):
         self.controller_interface.zip_model_element(element_id, model_id)
+
+    def reset_model(self, element_id):
+        self.controller_interface.zip_model_element(element_id, 'NO_MODEL')
+
+    def assign_test(self, element_id):
+        self.controller_interface.zip_test_element(element_id, self.test_id)
+
+    def reset_test(self, element_id):
+        self.controller_interface.zip_test_element(element_id, 'NO_TEST')
 
     def assign_state(self, element_id, element_state):
         self.controller_interface.set_state(element_id, element_state)

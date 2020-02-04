@@ -35,14 +35,12 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
     print('  void zip_model_element(string element_id, string model_id)')
     print('  bool is_cloud_available()')
     print('  string instantiate_model(ModelConfiguration model_configuration)')
-    print('  ModelState set_model_state(ModelState model_state)')
-    print('  void set_test(Test test_configuration)')
-    print('  Test get_test(ElementType element_type)')
-    print('  void test_completed()')
-    print('  bool is_test_over()')
-    print('  void run()')
-    print('  void reset()')
-    print('  void stop()')
+    print('  string set_test(Test test_configuration)')
+    print('  void zip_test_element(string element_id, string test_id)')
+    print('  string get_test_id(string element_id)')
+    print('  Test get_test(string test_id)')
+    print('  void test_completed(string test_id)')
+    print('  bool is_test_over(string test_id)')
     print('')
     sys.exit(0)
 
@@ -188,53 +186,41 @@ elif cmd == 'instantiate_model':
         sys.exit(1)
     pp.pprint(client.instantiate_model(eval(args[0]),))
 
-elif cmd == 'set_model_state':
-    if len(args) != 1:
-        print('set_model_state requires 1 args')
-        sys.exit(1)
-    pp.pprint(client.set_model_state(eval(args[0]),))
-
 elif cmd == 'set_test':
     if len(args) != 1:
         print('set_test requires 1 args')
         sys.exit(1)
     pp.pprint(client.set_test(eval(args[0]),))
 
+elif cmd == 'zip_test_element':
+    if len(args) != 2:
+        print('zip_test_element requires 2 args')
+        sys.exit(1)
+    pp.pprint(client.zip_test_element(args[0], args[1],))
+
+elif cmd == 'get_test_id':
+    if len(args) != 1:
+        print('get_test_id requires 1 args')
+        sys.exit(1)
+    pp.pprint(client.get_test_id(args[0],))
+
 elif cmd == 'get_test':
     if len(args) != 1:
         print('get_test requires 1 args')
         sys.exit(1)
-    pp.pprint(client.get_test(eval(args[0]),))
+    pp.pprint(client.get_test(args[0],))
 
 elif cmd == 'test_completed':
-    if len(args) != 0:
-        print('test_completed requires 0 args')
+    if len(args) != 1:
+        print('test_completed requires 1 args')
         sys.exit(1)
-    pp.pprint(client.test_completed())
+    pp.pprint(client.test_completed(args[0],))
 
 elif cmd == 'is_test_over':
-    if len(args) != 0:
-        print('is_test_over requires 0 args')
+    if len(args) != 1:
+        print('is_test_over requires 1 args')
         sys.exit(1)
-    pp.pprint(client.is_test_over())
-
-elif cmd == 'run':
-    if len(args) != 0:
-        print('run requires 0 args')
-        sys.exit(1)
-    pp.pprint(client.run())
-
-elif cmd == 'reset':
-    if len(args) != 0:
-        print('reset requires 0 args')
-        sys.exit(1)
-    pp.pprint(client.reset())
-
-elif cmd == 'stop':
-    if len(args) != 0:
-        print('stop requires 0 args')
-        sys.exit(1)
-    pp.pprint(client.stop())
+    pp.pprint(client.is_test_over(args[0],))
 
 else:
     print('Unrecognized method %s' % cmd)

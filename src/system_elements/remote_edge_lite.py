@@ -9,7 +9,7 @@ from PIL import Image
 from tflite_runtime.interpreter import Interpreter
 from pathlib import Path
 from src.components.client_components.sink_client import SinkClient
-from src.components.client_components.internal_controller import InternalController
+from src.components.client_components.internal_master_client import InternalClient
 from thrift_interfaces.ttypes import ElementType, ElementState
 
 BATCH_SIZE = 8
@@ -21,7 +21,7 @@ class RemoteEdge:
         self.batch_size = BATCH_SIZE
         self.no_images = NO_IMAGES
         os.environ['IP_MASTER'] = master_ip
-        self.controller = InternalController(server_ip=master_ip, port=port)
+        self.controller = InternalClient(server_ip=master_ip, port=port)
         self.controller.register_element(ElementType.CLIENT)
         self.sink_client = None
         self.interpreter = None

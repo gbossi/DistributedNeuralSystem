@@ -1,13 +1,13 @@
 import time
 from thrift_interfaces.ttypes import ElementState, ElementType, PerformanceMessage
-from src.components.client_components.master_controller import MasterController
+from src.components.client_components.master_client import MasterClient
 
 WAITING_TIME = 5
 
 
-class InternalController(MasterController):
-    def __init__(self, server_ip='localhost', port=10100):
-        super(InternalController, self).__init__(server_ip, port)
+class InternalClient(MasterClient):
+    def __init__(self, server_ip, port):
+        super(InternalClient, self).__init__(server_ip, port)
         self.last_update = 0
         self.model_id = None
 
@@ -49,11 +49,12 @@ class InternalController(MasterController):
         self.send_log('Getting a new test')
         self.set_state(ElementState.READY)
         self.wait_in_ready_state()
-        return self.controller_interface.get_test(self.element_type)
+        self.test_id = self.controller_interface.get_test_id(self.element_id)
+        return self.controller_interface.get_test(self.test_id)
 
     def test_completed(self):
         self.send_log('Completed test')
-        self.controller_interface.test_completed()
+        self.controller_interface.test_completed(self.test_id)
 
     def download_model(self):
         self.send_log('Waiting for a new model')

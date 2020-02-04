@@ -1,6 +1,6 @@
 from src.utils.thrift_servers import Server, ServerType
-from src.components.server_components.controller_server import ControllerInterfaceService
-from src.components.server_components.log_server import LogServerInterfaceService
+from src.components.server_components.controller_handler import ControllerInterfaceService
+from src.components.server_components.log_handler import LogInterfaceService
 from thrift.TMultiplexedProcessor import TMultiplexedProcessor
 from thrift_interfaces import ControllerInterface, LogInterface
 
@@ -9,7 +9,7 @@ def master_server_main(master_port=10100):
     processor = TMultiplexedProcessor()
 
     controller_service = ControllerInterfaceService()
-    logger_service = LogServerInterfaceService()
+    logger_service = LogInterfaceService()
 
     processor.registerProcessor("Controller", ControllerInterface.Processor(controller_service))
     processor.registerProcessor("Logger", LogInterface.Processor(logger_service))
