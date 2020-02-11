@@ -8,8 +8,6 @@ from src.utils.enums import get_thrift_enum_name
 from thrift_interfaces.ttypes import Message, PerformanceMessage, LogType, FileChunk, SpecsMessage
 
 
-
-
 class LogInterfaceService:
     def __init__(self):
         base_path = "./logs/"

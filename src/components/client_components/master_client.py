@@ -70,7 +70,7 @@ class MasterClient:
         :return: null
         """
         self.element_type = element_type
-        command = subprocess.run(['uname', '-p'], stdout=subprocess.PIPE)
+        command = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
         architecture = command.stdout.decode().rstrip()
 
         if 'tensorflow' in sys.modules:

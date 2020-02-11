@@ -2,16 +2,23 @@ import argparse
 import subprocess
 
 parser = argparse.ArgumentParser(description='welcome')
-parser.add_argument('--tfversion', '-tfv', choices=['lite', 'normal'],
+parser.add_argument('--tfversion', '-tfv', choices=['lite', 'normal'], required=True,
                     help='specify the version of the app you want to use "')
 
 args = parser.parse_args()
 tfversion = args.tfversion
 
-command = subprocess.run(['apt-get', 'install', 'lshw', 'libjpeg-dev', '-y'], stdout=subprocess.PIPE)
+command = subprocess.run(['apt-get', 'install',
+                          'lshw',
+                          'libjpeg-dev',
+                          'python3-pip',
+                          'libatlas-base-dev',
+                          'libopenjp2-7',
+                          'libtiff5', '-y'],
+                         stdout=subprocess.PIPE)
 print(command.stdout.decode().rstrip())
 
-command = subprocess.run(['uname', '-p'], stdout=subprocess.PIPE)
+command = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
 architecture = command.stdout.decode().rstrip()
 
 if "x86_64" in architecture or "aarch64" in architecture or "armv7l" in architecture:
