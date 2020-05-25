@@ -1,9 +1,13 @@
 import argparse
 import subprocess
+import os
 
 parser = argparse.ArgumentParser(description='welcome')
 parser.add_argument('--tfversion', '-tfv', choices=['lite', 'normal'], required=True,
                     help='specify the version of the app you want to use "')
+
+if os.geteuid() != 0:
+    exit("You need to have root privileges to run this script.\nPlease try again, this time using 'sudo'. Exiting.")
 
 args = parser.parse_args()
 tfversion = args.tfversion
@@ -45,6 +49,7 @@ print("Python version "+version+" supported")
 
 tensorflow_lite = "https://dl.google.com/coral/python/tflite_runtime-2.1.0-"+version+"-linux_"+architecture+".whl"
 
+subprocess.run(['python3', '-m', 'pip', 'install', '--upgrade', 'pip'], stdout=subprocess.PIPE)
 
 print("Installing Python dependencies")
 if tfversion == 'lite':
