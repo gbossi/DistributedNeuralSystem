@@ -13,11 +13,34 @@ These two services provides different function to the connected elements dependi
 </p>
 
 ## Experimental Scenarios
+### Scenario 1: Limited Edge Computing (Low Power Device)
+Setup: We deploy a low-power single-board computer (Raspberry Pi) at the edge to collect sensor data and process a small part of the DNN effeciently.
+Data Processing: A great part of unprocessed data will be sent to the Cloud server.
+Computing Power Edge: Since the limited on-device processing, it will relies heavily on cloud-based resources.
+
+### Scenario 2: Moderate Edge Computing (Mid-Range Device)
+Setup: We deploy a device with moderate processing power at the edge, like a single-board computer . This allows to process a greater part of the DNN effeciently.
+Data Processing: Pre-processed data is sent to the central server, reducing the amount of raw data transferred.
+Computing Power Edge: Balance between on-device processing and cloud-based analysis.
+
+### Scenario 3: High Edge Computing (High-Power Device)
+Setup: We deploy a powerful device at the edge, like a dedicated GPU graphic card. This allows for running most of the DNN layers directly on the edge device.
+Data Processing: Minimal data transfer to the central server, focusing on data synchronization and remote monitoring.
+Computing Power Edge: Primarily relies on on-device processing for DNN computation.
 
 <p align="middle">
 <img src="https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/8a5beaac-e217-49de-8335-ee741cc98399" width="600">
 </p>
 
+### Expected Outcomes:
+We expect to see a correlation between increasing computing power at the edge and improved amount of processed image per seconds.
+Scenario 3 might achieve faster response times and more tailored recommendations due to on-device AI processing.
+Scenarios 1 and 2 might face limitations in real-time analysis and complex modeling due to reliance on the central server.
+
+
+## Results
+To prove the expected outcomes the DNN have been cut in all possible ways, to divide the computing efforts between the Edge computer and the Cloud computer accordingly.
+In the next graphs, the computing time for each the results of this study is presented for each cut. The expected outcomes is confirmed.
 
 ![image](https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/749ee5e5-070c-4a45-ba45-11c96fa8c7d3)
 
