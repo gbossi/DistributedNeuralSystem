@@ -13,18 +13,18 @@ These two services provides different function to the connected elements dependi
 </p>
 
 ## Experimental Scenarios
-### Scenario 1: Limited Edge Computing (Low Power Device)
+### Scenario A: Limited Edge Computing (Low Power Device)
 Setup: We deploy a low-power single-board computer (Raspberry Pi) at the edge to collect sensor data and process a small part of the DNN effeciently.
 Data Processing: A great part of unprocessed data will be sent to the Cloud server.
 Computing Power Edge: Since the limited on-device processing, it will relies heavily on cloud-based resources.
 
-### Scenario 2: Moderate Edge Computing (Mid-Range Device)
-Setup: We deploy a device with moderate processing power at the edge, like a single-board computer . This allows to process a greater part of the DNN effeciently.
+### Scenario B: Moderate Edge Computing (Mid-Range Device)
+Setup: We deploy a device with moderate processing power at the edge (Odroid N2). This allows to process a greater part of the DNN effeciently.
 Data Processing: Pre-processed data is sent to the central server, reducing the amount of raw data transferred.
 Computing Power Edge: Balance between on-device processing and cloud-based analysis.
 
-### Scenario 3: High Edge Computing (High-Power Device)
-Setup: We deploy a powerful device at the edge, like a dedicated GPU graphic card. This allows for running most of the DNN layers directly on the edge device.
+### Scenario C: High Edge Computing (High-Power Device)
+Setup: We deploy a powerful device at the edge, like a dedicated GPU graphic card (Nvidia TX2). This allows for running most of the DNN layers directly on the edge device.
 Data Processing: Minimal data transfer to the central server, focusing on data synchronization and remote monitoring.
 Computing Power Edge: Primarily relies on on-device processing for DNN computation.
 
@@ -34,19 +34,20 @@ Computing Power Edge: Primarily relies on on-device processing for DNN computati
 
 ### Expected Outcomes:
 We expect to see a correlation between increasing computing power at the edge and improved amount of processed image per seconds.
-Scenario 3 might achieve faster response times and more tailored recommendations due to on-device AI processing.
-Scenarios 1 and 2 might face limitations in real-time analysis and complex modeling due to reliance on the central server.
+Scenario 3 might achieve faster response times and more tailored recommendations due to on-device DNN processing.
+Scenarios 1 and 2 might face limitations in DNN processing due to reliance on the cloud server.
 
 
 ## Results
 To prove the expected outcomes the VGG16 DNN have been cut in all possible ways, to divide the computing efforts between the Edge computer and the Cloud computer accordingly.
 In the next graphs, the computing time for each the results of this study is presented for each cut. The expected outcomes is confirmed.
 
+### Scenario A: Limited Edge Computing (Low Power Device)
 ![image](https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/749ee5e5-070c-4a45-ba45-11c96fa8c7d3)
 
-
+### Scenario B: Moderate Edge Computing (Mid-Range Device)
 ![image](https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/4e88e5e5-e307-48cb-9272-69f5a9c460f6)
 
-
+### Scenario C: High Edge Computing (High-Power Device)
 ![image](https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/45acc3b8-eb79-4e25-a542-6a32faa15fd3)
 
