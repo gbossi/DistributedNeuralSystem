@@ -39,7 +39,7 @@ Scenarios 1 and 2 might face limitations in real-time analysis and complex model
 
 
 ## Results
-To prove the expected outcomes the DNN have been cut in all possible ways, to divide the computing efforts between the Edge computer and the Cloud computer accordingly.
+To prove the expected outcomes the VGG16 DNN have been cut in all possible ways, to divide the computing efforts between the Edge computer and the Cloud computer accordingly.
 In the next graphs, the computing time for each the results of this study is presented for each cut. The expected outcomes is confirmed.
 
 ![image](https://github.com/gbossi/DistributedNeuralSystem/assets/38566530/749ee5e5-070c-4a45-ba45-11c96fa8c7d3)
